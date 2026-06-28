@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>栈前日志 | 前端知识日更博客</title>
+  <meta name="description" content="一个聚焦前端知识分享的个人博客，记录 CSS、JavaScript、React 与工程化实践。">
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero" id="top">
+    <nav class="topbar">
+      <a class="brand" href="#top">栈前日志</a>
+      <div class="topbar-actions">
+        <a class="ghost-link" href="#posts">文章</a>
+        <a class="ghost-link" href="#archive">归档</a>
+        <a class="primary-link" href="#compose">写一篇</a>
+      </div>
+    </nav>
+
+    <div class="hero-media" aria-hidden="true">
+      <img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1800&q=80" alt="">
+    </div>
+
+    <div class="hero-content shell">
+      <p class="eyebrow">个人博客</p>
+      <h1>栈前日志</h1>
+      <p class="hero-copy">
+        每天分享一点前端知识，把组件经验、性能优化、工程化踩坑和交互细节，慢慢写成一套自己的前端手册。
+      </p>
+
+      <div class="hero-metrics" id="hero-metrics">
+        <div class="metric">
+          <strong id="metric-posts">0</strong>
+          <span>已发布</span>
+        </div>
+        <div class="metric">
+          <strong id="metric-tags">0</strong>
+          <span>标签</span>
+        </div>
+        <div class="metric">
+          <strong id="metric-streak">0</strong>
+          <span>连更天数</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="band feature-band">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">今日主推</p>
+            <h2>最近的前端笔记</h2>
+          </div>
+          <p class="section-note">一边积累文章，一边保留适合你自己每天更新的写作节奏。</p>
+        </div>
+
+        <div class="feature-layout">
+          <article class="featured-story" id="featured-story"></article>
+
+          <aside class="insight-panel">
+            <div class="aside-block">
+              <p class="aside-title">高频标签</p>
+              <div class="tag-cloud" id="hot-tags"></div>
+            </div>
+
+            <div class="aside-block">
+              <p class="aside-title">本周选题</p>
+              <ul class="idea-list" id="idea-list"></ul>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="band library-band" id="posts">
+      <div class="shell">
+        <div class="section-head library-head">
+          <div>
+            <p class="section-kicker">文章库</p>
+            <h2>最新文章</h2>
+          </div>
+
+          <div class="filters">
+            <label class="search-field">
+              <span class="visually-hidden">搜索文章</span>
+              <input id="search-input" type="search" placeholder="搜索标题、摘要或标签">
+            </label>
+          </div>
+        </div>
+
+        <div class="tag-strip" id="tag-strip"></div>
+
+        <div class="library-layout">
+          <div class="post-grid" id="post-grid"></div>
+
+          <article class="reader-panel" id="reader-panel">
+            <div class="reader-placeholder">
+              <p class="reader-label">阅读区</p>
+              <h3>选择一篇文章开始阅读</h3>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band compose-band" id="compose">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">写作面板</p>
+            <h2>今天也发一篇</h2>
+          </div>
+          <div class="compose-actions">
+            <button type="button" class="secondary-button" id="prefill-button">填入今日模板</button>
+            <button type="button" class="secondary-button" id="clear-button">清空草稿</button>
+          </div>
+        </div>
+
+        <form class="compose-form" id="compose-form">
+          <div class="field-row compact">
+            <label class="field">
+              <span>发布日期</span>
+              <input id="post-date" name="date" type="date" required>
+            </label>
+            <label class="field">
+              <span>标题</span>
+              <input id="post-title" name="title" type="text" maxlength="80" placeholder="今天想分享什么？" required>
+            </label>
+          </div>
+
+          <div class="field-row compact">
+            <label class="field">
+              <span>标签</span>
+              <input id="post-tags" name="tags" type="text" placeholder="CSS, React, 性能优化">
+            </label>
+            <label class="field">
+              <span>封面图</span>
+              <input id="post-cover" name="cover" type="url" placeholder="可留空">
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>摘要</span>
+              <textarea id="post-excerpt" name="excerpt" rows="3" maxlength="180" placeholder="用两三句话概括这篇内容。" required></textarea>
+            </label>
+          </div>
+
+          <div class="field-row">
+            <label class="field">
+              <span>正文</span>
+              <textarea id="post-content" name="content" rows="15" placeholder="从你的思路、代码片段和结论开始写。" required></textarea>
+            </label>
+          </div>
+
+          <div class="compose-footer">
+            <p class="draft-status" id="draft-status">草稿未修改</p>
+            <button type="submit" class="primary-button">发布文章</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="band archive-band" id="archive">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">归档</p>
+            <h2>按时间回看</h2>
+          </div>
+          <p class="section-note">把每天的分享积累成一个清晰的时间线，方便回顾与复用。</p>
+        </div>
+
+        <div class="archive-layout">
+          <div class="archive-list" id="archive-list"></div>
+          <div class="archive-side">
+            <p class="aside-title">最近节奏</p>
+            <div class="rhythm-list" id="rhythm-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
