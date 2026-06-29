@@ -18,6 +18,88 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-06-29-css-has-state",
+    title: "用 :has() 把状态样式交还给 CSS",
+    date: "2026-06-29",
+    tags: ["CSS", "选择器", "交互"],
+    cover: coverPool[1],
+    excerpt: "很多为了父级高亮、表单反馈和卡片状态写的 JS，现在可以先问一句：这是不是 CSS :has() 就能表达？",
+    content: `
+## 为什么今天值得写它
+
+过去处理“父元素根据子元素状态变样式”，经常要给父级补一个 class，或者写 JS 监听 input、hover、aria 状态再同步到外层。
+
+\`:has()\` 的价值在于，它让 CSS 可以根据内部结构、子元素状态或相邻元素关系来选择外层元素。很多只是为了视觉反馈存在的轻状态，就不用再交给 JavaScript 管了。
+
+## 典型用法一：表单分组自己响应
+
+一个输入框聚焦、校验失败、被勾选时，通常真正要变化的是整组表单区域，而不是 input 本身。
+
+\`\`\`css
+.field {
+  border: 1px solid #d6dde3;
+  background: #fff;
+}
+
+.field:has(input:focus-visible) {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 12%);
+}
+
+.field:has(input:invalid:not(:placeholder-shown)) {
+  border-color: #dc2626;
+}
+\`\`\`
+
+这类逻辑以前常常会变成 \`is-focused\`、\`is-error\` 之类的 class。现在如果状态本来就在 DOM 里，就可以让 CSS 自己读出来。
+
+## 典型用法二：卡片根据内容调整
+
+有些卡片带徽标，有些没有；有些卡片有操作区，有些只是纯展示。用 \`:has()\` 可以让同一个组件根据实际内容调整密度。
+
+\`\`\`css
+.article-card:has(.badge) {
+  padding-top: 18px;
+}
+
+.article-card:has(.actions) {
+  grid-template-rows: 1fr auto;
+}
+\`\`\`
+
+它很适合处理“有这个内容就改变一点样式”的场景，比再额外传一个 \`variant\` 更直观。
+
+## 别把选择器写得太宽
+
+\`:has()\` 很强，但不要随手写成全局扫描。尽量把锚点限制在具体组件上，内部条件也优先用直接子元素或相邻元素关系。
+
+\`\`\`css
+/* 不推荐：影响范围太大 */
+body:has(.modal-open) {
+  overflow: hidden;
+}
+
+/* 更稳：把判断收在组件边界里 */
+.tabs:has(> .tab[aria-selected="true"]) {
+  border-color: #2563eb;
+}
+\`\`\`
+
+如果页面会频繁插入、删除节点，过宽的 \`:has()\` 可能让浏览器反复重新计算匹配关系。组件级、局部化，是它最舒服的使用方式。
+
+## 我的使用规则
+
+- 用它处理视觉状态，不把核心业务状态藏进 CSS
+- 锚点选具体组件，少用 \`body\`、\`:root\`、\`*\`
+- 内部选择器尽量具体，能写 \`>\` 或 \`+\` 就少写宽泛后代选择器
+- 关键体验保留默认样式，增强效果再交给 \`:has()\`
+
+## 最后一句
+
+\`:has()\` 不是为了取代 JS，而是把“本来只是样式响应”的部分还给 CSS。少一段状态同步代码，组件就少一个容易跑偏的地方。
+`
+  },
+  {
     id: "2026-06-28-container-queries",
     title: "Container Queries 真正好用的时刻",
     date: "2026-06-28",
