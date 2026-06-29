@@ -292,6 +292,27 @@ a {
   color: var(--ink-soft);
 }
 
+.stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+}
+
+.stat-row span,
+.reader-stats span {
+  padding: 6px 10px;
+  border: 1px solid rgba(147, 162, 158, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.74);
+}
+
+.stat-row.compact {
+  margin-top: 10px;
+}
+
 .featured-copy h3 {
   margin: 14px 0 14px;
   font-size: clamp(1.9rem, 3vw, 2.6rem);
@@ -557,6 +578,34 @@ a {
   color: var(--ink-strong);
 }
 
+.reader-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.like-button {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid rgba(213, 100, 77, 0.42);
+  border-radius: 999px;
+  background: rgba(213, 100, 77, 0.08);
+  color: #9d3f2f;
+  cursor: pointer;
+}
+
+.like-button.is-liked,
+.like-button:hover,
+.like-button:focus-visible {
+  background: var(--coral);
+  color: #fff7f0;
+  border-color: var(--coral);
+}
+
 .reader-content .post-body {
   margin-top: 24px;
   color: var(--ink-main);
@@ -592,6 +641,94 @@ a {
   border-radius: var(--radius);
   background: var(--surface-deep);
   color: #edf1f1;
+}
+
+.comment-box {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(147, 162, 158, 0.28);
+}
+
+.comment-box-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.comment-box h4 {
+  margin: 0;
+  font-size: 1.12rem;
+  color: var(--ink-strong);
+}
+
+.comment-box-head span,
+.comment-empty {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.comment-form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.comment-form input,
+.comment-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffdf8;
+  color: var(--ink-strong);
+  padding: 12px 13px;
+}
+
+.comment-form textarea {
+  resize: vertical;
+}
+
+.comment-form input:focus,
+.comment-form textarea:focus {
+  outline: 2px solid rgba(90, 130, 189, 0.24);
+  border-color: var(--blue);
+}
+
+.comment-form .primary-button {
+  justify-self: end;
+}
+
+.comment-list {
+  display: grid;
+  gap: 12px;
+}
+
+.comment-item {
+  padding: 14px;
+  border: 1px solid rgba(147, 162, 158, 0.24);
+  border-radius: var(--radius);
+  background: rgba(255, 250, 242, 0.78);
+}
+
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--ink-strong);
+}
+
+.comment-head span {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.comment-item p,
+.comment-empty {
+  margin: 0;
+  line-height: 1.7;
 }
 
 .reader-actions {

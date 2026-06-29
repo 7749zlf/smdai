@@ -1,5 +1,6 @@
 const storageKey = "stack-front-daily-posts";
 const draftKey = "stack-front-draft";
+const interactionKey = "stack-front-interactions";
 
 const coverPool = [
   "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80",
@@ -368,7 +369,9 @@ const state = {
   search: "",
   activeTag: "全部",
   posts: [],
-  activePostId: ""
+  activePostId: "",
+  interactions: {},
+  viewedInSession: new Set()
 };
 
 function safeReadJson(key, fallback) {
@@ -386,6 +389,64 @@ function safeWriteJson(key, value) {
   } catch (error) {
     // Ignore write failures in locked-down browser contexts.
   }
+}
+
+function sanitizeInteractionRecord(record) {
+  const comments = Array.isArray(record?.comments)
+    ? record.comments
+      .map((comment) => ({
+        id: String(comment.id || `comment-${Date.now()}`),
+        name: String(comment.name || "匿名读者").trim().slice(0, 24) || "匿名读者",
+        content: String(comment.content || "").trim().slice(0, 280),
+        createdAt: Number(comment.createdAt || Date.now())
+      }))
+      .filter((comment) => comment.content)
+    : [];
+
+  return {
+    views: Math.max(0, Number(record?.views || 0)),
+    likes: Math.max(0, Number(record?.likes || 0)),
+    liked: Boolean(record?.liked),
+    comments
+  };
+}
+
+function bootInteractions() {
+  const raw = safeReadJson(interactionKey, {});
+  state.interactions = Object.fromEntries(
+    Object.entries(raw).map(([postId, record]) => [postId, sanitizeInteractionRecord(record)])
+  );
+}
+
+function getInteraction(postId) {
+  if (!state.interactions[postId]) {
+    state.interactions[postId] = sanitizeInteractionRecord({});
+  }
+
+  return state.interactions[postId];
+}
+
+function persistInteractions() {
+  safeWriteJson(interactionKey, state.interactions);
+}
+
+function getPostStats(postId) {
+  const record = getInteraction(postId);
+  return {
+    views: record.views,
+    likes: record.likes,
+    liked: record.liked,
+    comments: record.comments.length
+  };
+}
+
+function renderStatPills(postId) {
+  const stats = getPostStats(postId);
+  return `
+    <span>阅读 ${stats.views}</span>
+    <span>点赞 ${stats.likes}</span>
+    <span>评论 ${stats.comments}</span>
+  `;
 }
 
 function formatDate(dateString) {
@@ -622,6 +683,7 @@ function renderFeatured(post) {
         <span>${formatDate(post.date)}</span>
         <span>${post.readingMinutes} 分钟</span>
       </div>
+      <div class="stat-row">${renderStatPills(post.id)}</div>
       <h3>${post.title}</h3>
       <p>${post.excerpt}</p>
       <div class="tag-row" style="margin-top: 20px;">
@@ -675,6 +737,7 @@ function renderPostGrid(posts) {
           <span>${formatDate(post.date)}</span>
           <span>${post.readingMinutes} 分钟</span>
         </div>
+        <div class="stat-row compact">${renderStatPills(post.id)}</div>
         <h3>${post.title}</h3>
         <p>${post.excerpt}</p>
       </div>
@@ -699,6 +762,26 @@ function renderReader(post) {
     return;
   }
 
+  const interaction = getInteraction(post.id);
+  const commentItems = interaction.comments
+    .slice()
+    .sort((left, right) => right.createdAt - left.createdAt)
+    .map((comment) => `
+      <article class="comment-item">
+        <div class="comment-head">
+          <strong>${escapeHtml(comment.name)}</strong>
+          <span>${new Intl.DateTimeFormat("zh-CN", {
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }).format(new Date(comment.createdAt))}</span>
+        </div>
+        <p>${escapeHtml(comment.content)}</p>
+      </article>
+    `)
+    .join("");
+
   elements.readerPanel.innerHTML = `
     <div class="reader-cover">
       <img src="${post.cover}" alt="${post.title}">
@@ -710,10 +793,31 @@ function renderReader(post) {
         <span>${post.readingMinutes} 分钟</span>
       </div>
       <h3>${post.title}</h3>
+      <div class="reader-stats">
+        <span>阅读 ${interaction.views}</span>
+        <button class="like-button ${interaction.liked ? "is-liked" : ""}" type="button" data-like-post="${post.id}">
+          ${interaction.liked ? "已点赞" : "点赞"} · ${interaction.likes}
+        </button>
+        <span>评论 ${interaction.comments.length}</span>
+      </div>
       <div class="tag-row">
         ${post.tags.map((tag) => `<button class="tag-chip ${state.activeTag === tag ? "active" : ""}" type="button" data-tag="${tag}">${tag}</button>`).join("")}
       </div>
       <div class="post-body">${markdownToHtml(post.content)}</div>
+      <section class="comment-box" aria-label="评论区">
+        <div class="comment-box-head">
+          <h4>评论</h4>
+          <span>${interaction.comments.length} 条</span>
+        </div>
+        <form class="comment-form" data-comment-form="${post.id}">
+          <input name="name" type="text" maxlength="24" placeholder="昵称">
+          <textarea name="content" rows="3" maxlength="280" placeholder="写下你的想法" required></textarea>
+          <button class="primary-button" type="submit">发布评论</button>
+        </form>
+        <div class="comment-list">
+          ${commentItems || `<p class="comment-empty">还没有评论，先留下一句吧。</p>`}
+        </div>
+      </section>
       <div class="reader-actions">
         <span class="reader-origin">${post.local ? "你刚刚发布的文章" : "示例文章"}</span>
         ${post.local ? `<button class="text-button" type="button" data-delete-post="${post.id}">删除</button>` : `<button class="text-button" type="button" data-open-post="${post.id}">保持选中</button>`}
@@ -775,8 +879,20 @@ function renderAll() {
   renderRhythm(state.posts);
 }
 
+function trackView(postId) {
+  if (!postId || state.viewedInSession.has(postId)) {
+    return;
+  }
+
+  const interaction = getInteraction(postId);
+  interaction.views += 1;
+  state.viewedInSession.add(postId);
+  persistInteractions();
+}
+
 function setActivePost(postId) {
   state.activePostId = postId;
+  trackView(postId);
   location.hash = postId;
   renderAll();
   const readerTop = elements.readerPanel.getBoundingClientRect().top + window.scrollY - 24;
@@ -912,6 +1028,38 @@ function deletePost(postId) {
   renderAll();
 }
 
+function toggleLike(postId) {
+  const interaction = getInteraction(postId);
+  interaction.liked = !interaction.liked;
+  interaction.likes = Math.max(0, interaction.likes + (interaction.liked ? 1 : -1));
+  persistInteractions();
+  renderAll();
+}
+
+function publishComment(event) {
+  event.preventDefault();
+
+  const form = event.target;
+  const postId = form.getAttribute("data-comment-form");
+  const formData = new FormData(form);
+  const content = String(formData.get("content") || "").trim();
+
+  if (!postId || !content) {
+    return;
+  }
+
+  const interaction = getInteraction(postId);
+  interaction.comments.push({
+    id: `comment-${Date.now()}`,
+    name: String(formData.get("name") || "匿名读者").trim().slice(0, 24) || "匿名读者",
+    content: content.slice(0, 280),
+    createdAt: Date.now()
+  });
+
+  persistInteractions();
+  renderAll();
+}
+
 function wireEvents() {
   document.addEventListener("click", (event) => {
     const tagButton = event.target.closest("[data-tag]");
@@ -927,9 +1075,21 @@ function wireEvents() {
       return;
     }
 
+    const likeButton = event.target.closest("[data-like-post]");
+    if (likeButton) {
+      toggleLike(likeButton.getAttribute("data-like-post"));
+      return;
+    }
+
     const deleteButton = event.target.closest("[data-delete-post]");
     if (deleteButton) {
       deletePost(deleteButton.getAttribute("data-delete-post"));
+    }
+  });
+
+  document.addEventListener("submit", (event) => {
+    if (event.target.matches("[data-comment-form]")) {
+      publishComment(event);
     }
   });
 
@@ -952,6 +1112,7 @@ function wireEvents() {
     const postId = location.hash.replace("#", "");
     if (postId && state.posts.some((post) => post.id === postId)) {
       state.activePostId = postId;
+      trackView(postId);
       renderAll();
     }
   });
@@ -977,6 +1138,7 @@ function hydrateDraft() {
 
 function init() {
   bootPosts();
+  bootInteractions();
   hydrateDraft();
   const hashPostId = location.hash.replace("#", "");
   if (hashPostId && state.posts.some((post) => post.id === hashPostId)) {
@@ -984,6 +1146,7 @@ function init() {
   } else if (state.posts.length) {
     state.activePostId = state.posts[0].id;
   }
+  trackView(state.activePostId);
   renderAll();
   wireEvents();
 }
