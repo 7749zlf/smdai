@@ -19,9 +19,105 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-06-30-grid-lanes",
+    title: "Grid Lanes：CSS 瀑布流终于不用再靠脚本补位",
+    date: "2026-06-30",
+    createdAt: Date.parse("2026-06-30T11:00:00+08:00"),
+    tags: ["CSS", "布局", "响应式", "Safari"],
+    cover: coverPool[0],
+    excerpt: "Safari 26.4 已经支持 Grid Lanes，Safari 27 的 WebKit 更新也继续重点展示它：用几行 CSS 做出瀑布流和砖块布局，同时保留 Grid 的轨道能力。",
+    content: `
+## 今天为什么值得记一笔
+
+WebKit 在 WWDC26 的 Safari 27 更新里继续重点展示了 Grid Lanes，而且它已经在 Safari 26.4 可用。它想解决的是一个老问题：Pinterest 式瀑布流布局为什么到今天还常常要靠 JavaScript 测高度、算列位、再手动补位？
+
+Grid Lanes 的方向很清楚：继续用 CSS Grid 的轨道模型，但让子项可以自动填入“车道”，形成垂直瀑布流或水平砖块流。对博客卡片、图片墙、作品集、菜谱列表、时间线这类高度不一致的内容，它比传统 grid 更贴近真实排版需求。
+
+## 最小写法长这样
+
+WebKit 的示例里，最核心的代码非常短：
+
+\`\`\`css
+.gallery {
+  display: grid-lanes;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+\`\`\`
+
+子元素不需要自己计算落在哪一列。浏览器会根据可用轨道和内容高度，把它们放进更合适的位置。
+
+如果要做响应式，也还是熟悉的 Grid 写法：
+
+\`\`\`css
+.gallery {
+  display: grid-lanes;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+\`\`\`
+
+这就是它让人兴奋的地方：不是发明一套完全陌生的新布局语言，而是在 Grid 的语法体系里补上“内容高度不一致时怎么自然排布”这一块。
+
+## 它和普通 Grid 差在哪
+
+普通 Grid 更像整齐的表格：每一行的高度通常会被同一行里最高的元素撑开。内容差异一大，卡片之间就容易出现大片空白。
+
+Grid Lanes 更像把每一列看成独立的流。短卡片下面可以继续接下一张，不必等旁边最高的卡片结束。这正是瀑布流布局以前需要 JS 帮忙的地方。
+
+适合优先尝试的场景包括：
+
+- 图片比例不一致的相册和作品集
+- 卡片摘要长短不同的文章列表
+- 内容块高度天然不稳定的资源导航
+- 时间线、菜谱、灵感板这类重浏览的页面
+
+## 别忽略顺序和可访问性
+
+瀑布流布局最容易踩的坑，是视觉顺序和源码顺序差得太远。用户用键盘 Tab 浏览时，如果焦点路线跳来跳去，体验会非常别扭。
+
+Grid Lanes 里提到的 \`flow-tolerance\` 就是一个值得关注的点。它让你控制子项为了填补空位可以偏离源码顺序到什么程度。也就是说，你可以在“排得更紧”和“顺序更稳定”之间留出一个明确的调节点。
+
+这类能力很重要，因为瀑布流不是单纯把空白塞满。真正可用的布局，还要让阅读顺序、键盘顺序和视觉感受尽量不要互相打架。
+
+## 现在怎么落地更稳
+
+我会把 Grid Lanes 当成一个适合预研和渐进增强的能力，而不是马上替换所有线上布局。
+
+更稳的做法是：
+
+- 默认先写一个普通 Grid 或多列布局作为兜底
+- 用 \`@supports (display: grid-lanes)\` 包住增强样式
+- 别让关键业务流程依赖瀑布流排序
+- 优先用在图片墙、灵感板、非线性浏览内容里
+- 测试键盘焦点顺序，尤其是卡片里有链接或按钮的时候
+
+示例结构可以这样组织：
+
+\`\`\`css
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+@supports (display: grid-lanes) {
+  .gallery {
+    display: grid-lanes;
+    flow-tolerance: 2em;
+  }
+}
+\`\`\`
+
+## 最后一句
+
+Grid Lanes 的意义，不只是“CSS 终于能做瀑布流”。更大的价值是，浏览器开始把过去前端反复手写的布局算法，收回到标准布局系统里。少一段测量和重排脚本，页面就少一层容易抖动的复杂度。`
+  },
+  {
     id: "2026-06-30-customizable-select",
     title: "Customizable Select：原生下拉框终于能认真设计了",
     date: "2026-06-30",
+    createdAt: Date.parse("2026-06-30T09:30:00+08:00"),
     tags: ["HTML", "CSS", "表单", "可访问性"],
     cover: coverPool[2],
     excerpt: "Safari 27 beta 把可定制的原生 select 放到台前，Chrome 也已经开始支持。现在值得重新评估那些用 div 和 JS 重写的下拉框了。",
