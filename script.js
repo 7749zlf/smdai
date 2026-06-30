@@ -19,6 +19,123 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-06-30-customizable-select",
+    title: "Customizable Select：原生下拉框终于能认真设计了",
+    date: "2026-06-30",
+    tags: ["HTML", "CSS", "表单", "可访问性"],
+    cover: coverPool[2],
+    excerpt: "Safari 27 beta 把可定制的原生 select 放到台前，Chrome 也已经开始支持。现在值得重新评估那些用 div 和 JS 重写的下拉框了。",
+    content: `
+## 今天为什么值得关注
+
+截至 2026 年 6 月 30 日，表单控件里最值得前端留意的新变化之一，是 Customizable Select 正在从“只能看演示”走向“可以开始做渐进增强”。
+
+Chrome 135 已经支持用 CSS 定制原生 \`<select>\`，Safari 27 beta 也把它列为重点能力。它解决的不是一个小审美问题，而是一个长期工程问题：过去想把下拉框做得和设计系统一致，常常要用一堆 \`div\`、键盘事件、焦点管理和 ARIA 重新造一个控件。
+
+现在更好的方向是：保留真正的 \`select\`，把视觉增强交给 CSS。
+
+## 最小可用写法
+
+核心开关是 \`appearance: base-select\`。它让浏览器把 \`select\` 切到一个更适合定制的基础形态，同时暴露出 picker、图标、选中态等可样式化的部分。
+
+\`\`\`html
+<label class="field">
+  <span>文章分类</span>
+  <select class="topic-select" name="topic">
+    <option value="css">
+      <span class="swatch css"></span>
+      <span>CSS</span>
+    </option>
+    <option value="react">
+      <span class="swatch react"></span>
+      <span>React</span>
+    </option>
+    <option value="html">
+      <span class="swatch html"></span>
+      <span>HTML</span>
+    </option>
+  </select>
+</label>
+\`\`\`
+
+\`\`\`css
+@supports (appearance: base-select) {
+  .topic-select,
+  .topic-select::picker(select) {
+    appearance: base-select;
+  }
+
+  .topic-select {
+    min-inline-size: 220px;
+    border: 1px solid #d7dee8;
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: #fff;
+  }
+
+  .topic-select::picker(select) {
+    border: 1px solid #d7dee8;
+    border-radius: 12px;
+    padding: 6px;
+    box-shadow: 0 18px 48px rgb(15 23 42 / 18%);
+  }
+
+  .topic-select option {
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+  }
+}
+\`\`\`
+
+## 它真正省掉的成本
+
+以前定制下拉框，最麻烦的不是画一个漂亮面板，而是补齐浏览器原生控件已经处理过的细节：
+
+- 键盘上下选择、回车确认、Esc 关闭
+- 表单提交时的值同步
+- 焦点状态和可访问性语义
+- 弹层不被父容器 \`overflow\` 裁掉
+- 移动端和辅助技术里的基础行为
+
+Customizable Select 的价值，是让我们可以少写一层“假控件”，多保留一层浏览器原生能力。设计系统依然能有自己的样式，但不必每次都重新实现交互底座。
+
+## 最重要的规则：别删文字
+
+WebKit 最近特别强调了一条规则：选项里可以加图标、色块、图片，但不要用它们替代文字。
+
+也就是说，下面这种思路更稳：
+
+\`\`\`html
+<option value="photo">
+  <img src="photo.svg" alt="">
+  <span>摄影</span>
+</option>
+\`\`\`
+
+而不是只留下一个图标。原因很直接：屏幕阅读器需要可读名称；不支持新能力的浏览器会回退到普通 \`select\`；CSS 加载失败时，文字也是最后的兜底体验。
+
+图标是增强，文字才是基线。
+
+## 现在该怎么用
+
+我的判断是：它已经适合放进实验性页面、后台工具、设计系统预研和低风险表单里试用，但还不适合无条件替换所有线上复杂选择器。
+
+落地时可以按这个顺序来：
+
+- 默认先写一个语义完整的原生 \`select\`
+- 用 \`@supports (appearance: base-select)\` 包住增强样式
+- 保留每个 \`option\` 的文本内容
+- 测键盘、屏幕阅读器、SSR 水合和旧浏览器回退
+- 只在确实不需要搜索、虚拟列表、复杂多选时替换自定义组件
+
+## 最后一句
+
+Customizable Select 不是让所有下拉框都立刻变花，而是给我们一个机会：把“原生控件”和“设计系统表达”重新接回同一条路上。能少造一个假控件，就少维护一整套边界条件。`
+  },
+  {
     id: "2026-06-29-css-has-state",
     title: "用 :has() 把状态样式交还给 CSS",
     date: "2026-06-29",
