@@ -19,6 +19,114 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-01-css-if-function",
+    title: "CSS if()：把条件样式写回属性值里",
+    date: "2026-07-01",
+    createdAt: Date.parse("2026-07-01T09:30:00+08:00"),
+    tags: ["CSS", "条件样式", "工程化"],
+    cover: coverPool[4],
+    excerpt: "Chrome 137 开始可以尝试 CSS if()。它让 media、supports 和 style 查询进入单个属性值，很多动态样式不用再拆成一堆重复规则。",
+    content: `
+## 今天为什么值得写它
+
+CSS 过去并不缺条件判断，但大多数条件都写在规则外面：\`@media\` 一层、\`@supports\` 一层、容器或样式查询再来一层。规则一多，真正变化的可能只是一个颜色、一个间距或一个图标位置，代码却被拆得很散。
+
+Chrome 137 开始可以尝试 \`if()\` 函数。它把条件判断放回属性值里，让“这个属性在不同条件下取什么值”变得更集中。
+
+## 基本写法
+
+\`if()\` 的结构是一组条件和值：
+
+\`\`\`css
+.card {
+  color: if(
+    media(width > 720px): #172033;
+    else: #263241
+  );
+}
+\`\`\`
+
+你可以把它理解成 CSS 属性值里的轻量分支。条件从前往后判断，命中第一个就使用对应的值；没有命中时，可以用 \`else\` 给一个兜底。
+
+## 它适合解决什么问题
+
+最适合先用 \`if()\` 的，是那些“只有一个值跟着条件变”的场景。
+
+例如主题色切换：
+
+\`\`\`css
+.notice {
+  --tone: warning;
+  border-color: if(
+    style(--tone: warning): #f59e0b;
+    style(--tone: danger): #ef4444;
+    else: #2563eb
+  );
+}
+\`\`\`
+
+或者把能力检测收进单个声明：
+
+\`\`\`css
+.panel {
+  backdrop-filter: if(
+    supports(backdrop-filter: blur(12px)): blur(12px);
+    else: none
+  );
+}
+\`\`\`
+
+以前这类代码常常要拆成多段规则。拆开当然能工作，但读代码的人需要来回跳，才能知道一个属性完整的决策逻辑。
+
+## 和 @media、@supports 不是替代关系
+
+\`if()\` 不是要替代 \`@media\` 或 \`@supports\`。如果一个条件会影响很多属性，外层规则依然更清楚：
+
+\`\`\`css
+@media (width > 720px) {
+  .layout {
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
+\`\`\`
+
+但如果只是一个属性值在变，把条件写在属性里会更贴近维护者的阅读路径。
+
+我的判断是：
+
+- 影响一组布局规则时，用 \`@media\`、\`@supports\` 或容器查询
+- 只影响单个属性值时，可以考虑 \`if()\`
+- 条件超过两三层时，优先拆回更直观的规则
+- 需要长期兼容旧浏览器时，先写普通声明，再用支持检测增强
+
+## 渐进增强怎么写
+
+因为 \`if()\` 还不是所有浏览器都能稳定使用，落地时要给兜底值：
+
+\`\`\`css
+.badge {
+  background: #2563eb;
+}
+
+@supports (background: if(media(width > 1px): red; else: blue)) {
+  .badge {
+    background: if(
+      style(--level: important): #dc2626;
+      else: #2563eb
+    );
+  }
+}
+\`\`\`
+
+这段代码的重点不是炫技，而是顺序：先保证默认体验可用，再给支持新语法的浏览器更精细的表达。
+
+## 最后一句
+
+\`if()\` 最有价值的地方，是让 CSS 里那些很小的条件判断不再被迫拆散。它不会让样式逻辑变少，但能让逻辑更靠近真正变化的属性。少一点跨规则跳转，维护时就少一点心智负担。`
+  },
+  {
     id: "2026-06-30-grid-lanes",
     title: "Grid Lanes：CSS 瀑布流终于不用再靠脚本补位",
     date: "2026-06-30",
