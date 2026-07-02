@@ -19,6 +19,121 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-02-scroll-target-group",
+    title: "scroll-target-group：两行 CSS 做目录高亮",
+    date: "2026-07-02",
+    createdAt: Date.parse("2026-07-02T09:30:00+08:00"),
+    tags: ["CSS", "滚动", "可访问性"],
+    cover: coverPool[3],
+    excerpt: "Chrome 的 Web UI 更新里继续强调原生滚动能力：用 scroll-target-group 和 :target-current，可以不写滚动监听就做出目录自动高亮。",
+    content: `
+## 今天为什么值得写它
+
+Chrome 团队在 2026 年 7 月 1 日发布的 Web UI 更新里，把 \`scroll-target-group: auto\` 放进了“减少噪音、最大化内容”的能力清单。它解决的是一个非常常见的小需求：文章目录、文档导航、长页面锚点列表，怎么随着滚动自动高亮当前章节？
+
+过去我们一般会写 \`IntersectionObserver\`，观察每个标题的位置，再给对应链接加 \`active\` class。逻辑不复杂，但每个项目都要重新写一遍，而且还要处理阈值、滚动容器、初始状态和回退。
+
+\`scroll-target-group\` 的思路更直接：让浏览器把一组锚点链接当成滚动标记，并自动判断哪一个目标当前在视口里。
+
+## 最小可用结构
+
+先保留普通、语义清楚的目录链接：
+
+\`\`\`html
+<nav class="toc" aria-label="文章目录">
+  <ol>
+    <li><a href="#intro">为什么要关注</a></li>
+    <li><a href="#usage">怎么使用</a></li>
+    <li><a href="#fallback">如何回退</a></li>
+  </ol>
+</nav>
+
+<article>
+  <h2 id="intro">为什么要关注</h2>
+  <p>...</p>
+  <h2 id="usage">怎么使用</h2>
+  <p>...</p>
+  <h2 id="fallback">如何回退</h2>
+  <p>...</p>
+</article>
+\`\`\`
+
+然后在目录列表上开启滚动目标分组：
+
+\`\`\`css
+.toc ol {
+  scroll-target-group: auto;
+}
+
+.toc a:target-current {
+  color: #2563eb;
+  font-weight: 700;
+}
+\`\`\`
+
+这就是核心。目录里的 \`a[href^="#"]\` 会参与浏览器的滚动目标判断；当前目标对应的链接会匹配 \`:target-current\`，你就可以直接写高亮样式。
+
+## 它真正省掉的是什么
+
+这不是为了少写两行 JS 而已。更重要的是，它把“当前滚动目标是谁”这个判断交回给浏览器。
+
+过去做目录高亮时，常见的边界包括：
+
+- 标题高度不一致，阈值很难一把梭
+- 页面里有固定顶部导航，需要手动补偏移
+- 内容懒加载后，观察区域会变化
+- 滚动容器不是 \`window\`，逻辑要再分支
+- 目录链接和标题关系要自己维护
+
+原生方案不会让所有边界消失，但它让基础状态管理更可靠：目录本来就是锚点链接，浏览器本来就知道这些链接指向哪里，现在只是在这个关系上补了一层“当前项”状态。
+
+## 和 aria-current 的关系
+
+Chrome 的说明里提到，浏览器可以自动给当前链接设置 \`aria-current="true"\`，同时应用 \`:target-current\`。这点很重要，因为目录高亮不应该只是视觉效果。
+
+也就是说，增强后的目录不只是“看起来有高亮”，辅助技术也能知道当前所在章节。对长文、文档、设置页这类内容，这比单纯加一个 \`.active\` class 更接近正确语义。
+
+不过我还是会保留一个原则：HTML 先写成没有增强也能用的目录。即使浏览器不支持 \`scroll-target-group\`，这些锚点链接依然可以点击、可以跳转、可以被读出来。
+
+## 现在怎么落地更稳
+
+它目前还不是所有主流浏览器都稳定支持，所以更适合当渐进增强：
+
+\`\`\`css
+.toc a {
+  color: #526173;
+  text-decoration: none;
+}
+
+@supports (scroll-target-group: auto) {
+  .toc ol {
+    scroll-target-group: auto;
+  }
+
+  .toc a:target-current {
+    color: #2563eb;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+\`\`\`
+
+我会优先把它放在这些地方：
+
+- 博客文章目录
+- 文档站侧边导航
+- 设置页分组导航
+- 长表单的步骤定位
+- 作品集或案例页的章节跳转
+
+如果页面需要兼容所有浏览器都显示实时高亮，那就继续保留 JS 方案。但如果高亮只是增强体验，这个 CSS 能让代码少很多。
+
+## 最后一句
+
+\`scroll-target-group\` 让我喜欢的地方，是它没有要求我们放弃语义化 HTML。目录还是目录，链接还是链接，只是浏览器终于能帮我们识别“现在读到哪一节”。这类小能力一多，前端页面就会从“到处补状态”慢慢回到“让平台自己表达状态”。`
+  },
+  {
     id: "2026-07-01-css-if-function",
     title: "CSS if()：把条件样式写回属性值里",
     date: "2026-07-01",
