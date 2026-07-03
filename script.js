@@ -1429,13 +1429,21 @@ function trackView(postId) {
   persistInteractions();
 }
 
+function scrollToReader() {
+  requestAnimationFrame(() => {
+    elements.readerPanel.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+}
+
 function setActivePost(postId) {
   state.activePostId = postId;
   trackView(postId);
-  location.hash = postId;
+  history.pushState(null, "", `#${postId}`);
   renderAll();
-  const readerTop = elements.readerPanel.getBoundingClientRect().top + window.scrollY - 24;
-  window.scrollTo({ top: readerTop, behavior: "smooth" });
+  scrollToReader();
 }
 
 function persistPosts() {

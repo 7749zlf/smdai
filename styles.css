@@ -539,6 +539,7 @@ a {
 .reader-panel {
   position: sticky;
   top: 24px;
+  scroll-margin-top: 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fffcf6;
