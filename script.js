@@ -1322,6 +1322,7 @@ const elements = {
   hotTags: document.getElementById("hot-tags"),
   ideaList: document.getElementById("idea-list"),
   tagStrip: document.getElementById("tag-strip"),
+  postListPanel: document.querySelector(".post-list-panel"),
   postGrid: document.getElementById("post-grid"),
   postPager: document.getElementById("post-pager"),
   readerPanel: document.getElementById("reader-panel"),
@@ -1842,6 +1843,31 @@ function renderReader(post) {
   `;
 }
 
+function syncPostListHeight() {
+  if (!elements.postListPanel || !elements.readerPanel) {
+    return;
+  }
+
+  if (window.innerWidth <= 1080) {
+    elements.postListPanel.style.removeProperty("--post-list-height");
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    const readerHeight = Math.ceil(elements.readerPanel.getBoundingClientRect().height);
+    elements.postListPanel.style.setProperty("--post-list-height", `${Math.max(540, readerHeight)}px`);
+  });
+}
+
+function syncPostListHeightAfterReaderMediaLoad() {
+  elements.readerPanel.querySelectorAll("img").forEach((image) => {
+    if (!image.complete) {
+      image.addEventListener("load", syncPostListHeight, { once: true });
+      image.addEventListener("error", syncPostListHeight, { once: true });
+    }
+  });
+}
+
 function groupByMonth(posts) {
   return posts.reduce((groups, post) => {
     const key = post.date.slice(0, 7);
@@ -1894,6 +1920,8 @@ function renderAll() {
   renderPostGrid(pagedPosts);
   renderPostPager(filteredPosts);
   renderReader(activePost);
+  syncPostListHeight();
+  syncPostListHeightAfterReaderMediaLoad();
   renderArchive(state.posts);
   renderRhythm(state.posts);
 }
@@ -2177,6 +2205,8 @@ function wireEvents() {
       renderAll();
     }
   });
+
+  window.addEventListener("resize", syncPostListHeight);
 }
 
 function hydrateDraft() {
