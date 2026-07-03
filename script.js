@@ -1435,9 +1435,7 @@ function setActivePost(postId) {
   location.hash = postId;
   renderAll();
   const readerTop = elements.readerPanel.getBoundingClientRect().top + window.scrollY - 24;
-  if (window.innerWidth < 1080) {
-    window.scrollTo({ top: readerTop, behavior: "smooth" });
-  }
+  window.scrollTo({ top: readerTop, behavior: "smooth" });
 }
 
 function persistPosts() {
