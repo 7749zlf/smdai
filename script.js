@@ -20,6 +20,440 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-03-scroll-state-queries",
+    title: "Scroll State Queries：让滚动状态自己暴露出来",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T15:00:00+08:00"),
+    tags: ["CSS", "滚动", "交互"],
+    cover: coverPool[0],
+    excerpt: "Chrome 133 引入 scroll-state 查询后，sticky 是否吸顶、snap 项是否命中、容器还能不能继续滚动，都可以先交给 CSS 判断。",
+    content: `
+## 为什么值得单独写一篇
+
+很多页面交互只是想知道一件小事：这个标题是不是已经吸顶了？这个横向列表现在命中了哪张卡片？这个容器右侧还有没有内容可以滚？
+
+以前这些问题通常交给 JavaScript：监听滚动、算位置、维护 class，再小心处理节流和边界。Chrome 133 开始支持的 \`@container scroll-state()\`，让浏览器已经知道的滚动状态可以直接进入 CSS。
+
+## 最小写法
+
+先把会暴露滚动状态的元素声明为 scroll-state 容器：
+
+\`\`\`css
+.sticky-shell {
+  position: sticky;
+  top: 0;
+  container-type: scroll-state;
+}
+
+@container scroll-state(stuck: top) {
+  .sticky-title {
+    box-shadow: 0 8px 20px rgb(15 23 42 / 14%);
+    background: #fff;
+  }
+}
+\`\`\`
+
+这段代码回答的是“sticky 元素现在是否卡在顶部”。如果卡住了，标题加阴影；如果没有卡住，就保持普通状态。
+
+## 三类很实用的状态
+
+目前最值得先记住的是这几类：
+
+- \`stuck\`：判断 sticky 元素是否贴住某个边
+- \`snapped\`：判断滚动吸附项是否处在 snap 状态
+- \`scrollable\`：判断容器在某个方向是否还有可滚动内容
+
+横向卡片列表可以这样写：
+
+\`\`\`css
+.snap-card {
+  scroll-snap-align: center;
+  container-type: scroll-state;
+}
+
+@container scroll-state(snapped: inline) {
+  .snap-card-inner {
+    transform: scale(1.04);
+    border-color: #2563eb;
+  }
+}
+\`\`\`
+
+这个写法不需要自己维护“当前卡片索引”。谁被浏览器吸附住，谁就得到增强样式。
+
+## 它不是所有滚动 JS 的替代品
+
+如果你要做复杂统计、懒加载、埋点，IntersectionObserver 和滚动事件仍然有位置。\`scroll-state()\` 更适合处理视觉反馈：吸顶后加背景、snap 后高亮、可滚动时显示提示。
+
+我的使用边界是：
+
+- 只影响样式时，优先考虑 CSS
+- 需要写业务数据或触发请求时，继续用 JS
+- 把它作为渐进增强，不让核心流程依赖单一浏览器能力
+
+## 最后一句
+
+\`scroll-state()\` 的意义，是把“浏览器已经知道的滚动事实”开放给 CSS。少写一点位置计算，页面就少一点滚动时的状态同步成本。`
+  },
+  {
+    id: "2026-07-03-css-carousels",
+    title: "CSS Carousel：少写一套轮播状态机",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T14:00:00+08:00"),
+    tags: ["CSS", "滚动", "可访问性"],
+    cover: coverPool[1],
+    excerpt: "Chrome 135 的 ::scroll-button() 和 ::scroll-marker() 让很多横向轮播可以从 JS 组件回到原生滚动容器。",
+    content: `
+## 轮播为什么总是容易写重
+
+轮播组件看起来简单，真正做完却经常很厚：上一张、下一张、禁用状态、分页点、键盘顺序、屏幕阅读器名称、触摸滚动、滚动吸附，每一项都要补。
+
+Chrome 135 开始支持的一组 CSS Overflow 5 能力，把这件事往原生平台推进了一步。核心是 \`::scroll-button()\` 和 \`::scroll-marker()\`：浏览器可以为滚动区域生成上一页、下一页按钮和位置标记。
+
+## 先从普通 scroller 开始
+
+轮播的基础仍然应该是可滚动内容：
+
+\`\`\`css
+.carousel {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 80%);
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.carousel > * {
+  scroll-snap-align: center;
+}
+\`\`\`
+
+这一步本身已经可用。没有增强能力时，用户依然可以横向滚动。
+
+## 加上滚动按钮
+
+\`\`\`css
+.carousel::scroll-button(left) {
+  content: "‹" / "上一项";
+}
+
+.carousel::scroll-button(right) {
+  content: "›" / "下一项";
+}
+\`\`\`
+
+浏览器生成的不是纯装饰，而是带状态的交互按钮。到达开头或结尾时，它可以自动处理不可用状态，这一点以前通常需要组件自己维护。
+
+## 再加滚动标记
+
+\`\`\`css
+.carousel::scroll-marker-group {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.carousel > *::scroll-marker {
+  content: "";
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: #b8c1cc;
+}
+
+.carousel > *::scroll-marker:target-current {
+  background: #2563eb;
+}
+\`\`\`
+
+这类分页点不再只是“看起来像按钮”的 span，而是和滚动位置有关联的标记。
+
+## 适合先落地在哪
+
+我会优先用它做这些低风险场景：
+
+- 文章推荐卡片
+- 产品截图横滑
+- 案例作品集
+- 小型图片画廊
+- 移动端横向分类列表
+
+如果轮播需要自动播放、复杂虚拟列表或跨浏览器完全一致的控件外观，传统组件仍然更可控。但如果只是让一组内容横向浏览，原生滚动加 CSS 轮播已经很值得考虑。
+
+## 最后一句
+
+好的轮播不应该先从“组件状态机”开始，而应该先从“这就是一组可滚动内容”开始。CSS Carousel 的价值，是让平台替我们补上按钮、标记和状态这层常见 UI。`
+  },
+  {
+    id: "2026-07-03-command-commandfor",
+    title: "command 和 commandfor：按钮行为也能声明式",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T13:00:00+08:00"),
+    tags: ["HTML", "交互", "可访问性"],
+    cover: coverPool[2],
+    excerpt: "Chrome 135 引入 command 和 commandfor 后，按钮可以声明式控制 dialog 和 popover，少写一层状态同步脚本。",
+    content: `
+## 为什么按钮需要新能力
+
+按钮是页面里最常见的交互入口，但很多按钮其实控制的是另一个元素：打开菜单、关闭弹窗、显示确认框、切换 popover。
+
+过去我们常写一段 JS，把按钮和目标元素绑起来，再同步 \`aria-expanded\`、焦点和关闭逻辑。Chrome 135 引入的 \`command\` 和 \`commandfor\`，让这类关系可以直接写在 HTML 里。
+
+## 打开一个 popover
+
+\`\`\`html
+<button commandfor="more-menu" command="show-popover">
+  更多操作
+</button>
+
+<div id="more-menu" popover>
+  <button>编辑</button>
+  <button>复制</button>
+  <button>删除</button>
+</div>
+\`\`\`
+
+\`commandfor\` 指向目标元素的 id，\`command\` 描述要执行的动作。浏览器负责把按钮行为映射到对应 API，比如 \`showPopover()\`。
+
+## 控制 dialog 也一样
+
+\`\`\`html
+<button commandfor="confirm" command="show-modal">
+  删除记录
+</button>
+
+<dialog id="confirm">
+  <p>确认删除这条记录吗？</p>
+  <button commandfor="confirm" command="close" value="cancel">取消</button>
+  <button commandfor="confirm" command="close" value="delete">删除</button>
+</dialog>
+\`\`\`
+
+这类代码最直接的收益，是状态关系更靠近 HTML 语义。按钮控制谁、做什么事，不再藏在某个事件监听器里。
+
+## 它替代了什么
+
+\`command\` 和 \`commandfor\` 可以看作更通用的声明式按钮机制。它覆盖了很多 \`popovertarget\` 和 \`popovertargetaction\` 的使用场景，并扩展到 dialog 等元素。
+
+它适合：
+
+- 打开或关闭 popover
+- 打开 modal dialog
+- 关闭 dialog
+- 给设计系统里的按钮建立更清楚的目标关系
+
+不适合：
+
+- 需要复杂业务判断的提交流程
+- 打开前必须异步校验权限的操作
+- 状态完全由框架路由或全局 store 控制的页面
+
+## 渐进增强思路
+
+因为兼容性还需要检查，生产里可以先保留 JS 行为，再逐步把简单控制迁到声明式属性。对设计系统来说，最适合先做的是菜单、确认框、帮助提示这些固定模式。
+
+## 最后一句
+
+\`commandfor\` 最吸引我的地方，是它让按钮重新像按钮：不是一个等待 JS 解释的空壳，而是能在 HTML 里直接说明“我要控制谁、做什么”。这会让交互关系更容易读，也更接近可访问的默认行为。`
+  },
+  {
+    id: "2026-07-03-anchor-positioning",
+    title: "CSS Anchor Positioning：弹层终于能跟着锚点走",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T12:00:00+08:00"),
+    tags: ["CSS", "弹层", "布局"],
+    cover: coverPool[3],
+    excerpt: "CSS Anchor Positioning 让 tooltip、菜单和浮层可以直接相对某个元素定位，很多浮层不再需要 JS 反复测量坐标。",
+    content: `
+## 弹层定位为什么麻烦
+
+tooltip、下拉菜单、浮动工具栏都离不开一个问题：浮层要相对某个按钮或输入框出现。过去这通常需要 JS 读取 \`getBoundingClientRect()\`，再考虑滚动、窗口边界、resize 和翻转方向。
+
+CSS Anchor Positioning 的目标，就是让浮层可以直接锚定到页面上的另一个元素。
+
+## 一个基础例子
+
+\`\`\`html
+<button class="help-button">说明</button>
+<div class="help-popover" popover>
+  这里是更详细的说明。
+</div>
+\`\`\`
+
+\`\`\`css
+.help-button {
+  anchor-name: --help;
+}
+
+.help-popover {
+  position: absolute;
+  position-anchor: --help;
+  position-area: bottom center;
+  margin-top: 8px;
+}
+\`\`\`
+
+按钮声明自己是一个锚点，浮层声明自己跟着这个锚点定位。阅读代码时，关系非常直接。
+
+## 它解决的是测量代码
+
+很多浮层组件里最脆弱的部分，不是展示本身，而是位置计算：
+
+- 目标元素滚动后坐标变了
+- 页面缩放后尺寸变了
+- 右侧空间不足需要翻转
+- 弹层进入 top layer 后参考关系变了
+- resize 时要重新计算
+
+Anchor Positioning 把这些问题的一部分交给布局系统。浏览器比我们更知道元素当前在哪里，也更适合在布局阶段处理位置。
+
+## 和 Popover API 组合更顺手
+
+Anchor Positioning 只负责位置，Popover API 负责显示、隐藏、顶层和轻量关闭。两者组合起来，能覆盖很多日常 UI：
+
+\`\`\`html
+<button popovertarget="profile-card" class="avatar-button">
+  打开资料卡
+</button>
+
+<aside id="profile-card" popover class="profile-card">
+  用户资料
+</aside>
+\`\`\`
+
+\`\`\`css
+.avatar-button {
+  anchor-name: --avatar;
+}
+
+.profile-card {
+  position-anchor: --avatar;
+  position-area: bottom right;
+}
+\`\`\`
+
+这比“按钮点击后 JS 算 top/left”更接近平台能力。
+
+## 现在怎么用更稳
+
+我会把它用在可渐进增强的浮层里：
+
+- tooltip
+- hover card
+- 菜单
+- 小型操作面板
+- 输入框旁的解释提示
+
+对于复杂拖拽、跨窗口边界或高度定制的编辑器浮层，成熟 JS 定位库仍然有价值。Anchor Positioning 更适合逐步替换那些重复的轻量定位代码。
+
+## 最后一句
+
+浮层本来就是“某个东西旁边的东西”。Anchor Positioning 终于让 CSS 也能直接表达这层关系。少测一次坐标，就少一个在滚动和缩放时跑偏的机会。`
+  },
+  {
+    id: "2026-07-03-interpolate-size",
+    title: "interpolate-size：终于能顺滑过渡到 height: auto",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T11:00:00+08:00"),
+    tags: ["CSS", "动画", "交互"],
+    cover: coverPool[4],
+    excerpt: "interpolate-size 和 calc-size() 让元素可以从固定尺寸过渡到 auto、max-content 等内在尺寸，折叠面板不必再靠 max-height 取巧。",
+    content: `
+## 为什么 height: auto 一直让人头疼
+
+折叠面板、FAQ、导航展开，最自然的状态其实是 \`height: auto\`。但传统 CSS 过渡不能在固定长度和 \`auto\` 之间顺滑插值，于是很多项目会用 \`max-height: 999px\`、JS 测量高度，或者干脆放弃动画。
+
+\`interpolate-size\` 和 \`calc-size()\` 给了 CSS 一条更干净的路：显式允许内在尺寸关键字参与动画。
+
+## 全局开启关键字插值
+
+Chrome 文档建议可以在根上启用：
+
+\`\`\`css
+:root {
+  interpolate-size: allow-keywords;
+}
+\`\`\`
+
+这样浏览器可以在长度和内在尺寸关键字之间做插值，比如 \`auto\`、\`min-content\`、\`max-content\`。
+
+一个折叠面板可以这样写：
+
+\`\`\`css
+.answer {
+  height: 0;
+  overflow: clip;
+  transition: height 0.25s ease;
+}
+
+.faq-item[open] .answer {
+  height: auto;
+}
+\`\`\`
+
+在支持的浏览器里，展开就不再是瞬间跳开。
+
+## calc-size() 适合更精确的计算
+
+如果你不想全局开启，也可以在具体属性里用 \`calc-size()\`：
+
+\`\`\`css
+.panel {
+  height: calc-size(auto, size);
+}
+\`\`\`
+
+\`calc-size()\` 的第二个参数可以基于 \`size\` 做计算，这让内在尺寸不只是“原样使用”，还可以参与更受控的公式。
+
+## 它替代了哪些旧技巧
+
+我最想替换的是这些写法：
+
+- \`max-height: 999px\` 的折叠动画
+- 展开前用 JS 读取 \`scrollHeight\`
+- 为不同内容长度写多个固定高度 class
+- 因为动画不好做而把交互做成瞬间切换
+
+新能力并不意味着所有地方都要动。老浏览器仍然需要兜底，但新浏览器可以得到更自然的体验。
+
+## 渐进增强写法
+
+\`\`\`css
+.answer {
+  max-height: 0;
+  overflow: clip;
+  transition: max-height 0.25s ease;
+}
+
+.faq-item[open] .answer {
+  max-height: 720px;
+}
+
+@supports (interpolate-size: allow-keywords) {
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  .answer {
+    height: 0;
+    max-height: none;
+    transition-property: height;
+  }
+
+  .faq-item[open] .answer {
+    height: auto;
+  }
+}
+\`\`\`
+
+兜底先保证能展开，增强再追求更自然的动画。
+
+## 最后一句
+
+\`height: auto\` 的动画不是炫技问题，而是很多真实交互的基础质感。能把它交还给 CSS，折叠面板和内容渐显这类组件就少了一大块测量代码。`
+  },
+  {
     id: "2026-07-03-css-custom-functions",
     title: "CSS @function：把重复的样式计算留在原生 CSS",
     date: "2026-07-03",
