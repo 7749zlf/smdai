@@ -19,6 +19,109 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-03-css-custom-functions",
+    title: "CSS @function：把重复的样式计算留在原生 CSS",
+    date: "2026-07-03",
+    createdAt: Date.parse("2026-07-03T09:30:00+08:00"),
+    tags: ["CSS", "设计系统", "工程化"],
+    cover: coverPool[2],
+    excerpt: "Chrome 139 开始支持 CSS 自定义函数 @function。它能把颜色透明度、主题切换、尺寸计算这类重复逻辑封装在原生 CSS 里。",
+    content: `
+## 今天为什么值得关注
+
+CSS 变量解决了“把值存起来”的问题，但没有很好解决“把一段计算逻辑复用起来”的问题。于是我们会在项目里反复写 \`color-mix()\`、\`clamp()\`、相对颜色语法，或者把这些逻辑交给 Sass、Less、CSS-in-JS 工具链。
+
+\`@function\` 的出现，让 CSS 开始拥有原生自定义函数。Chrome 的 Web UI 更新里提到，它从 Chrome 139 开始支持；MDN 也把它标成实验性能力，提醒生产环境要谨慎检查兼容性。
+
+换句话说，它现在最适合做预研、设计系统实验和渐进增强，而不是立刻替换所有预处理器函数。
+
+## 最小写法
+
+一个自定义函数以双横线开头，参数也用自定义属性的形式传入，最后用 \`result\` 描述符给出返回值。
+
+\`\`\`css
+@function --transparent(--color, --alpha) {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+
+.card {
+  background: --transparent(#2563eb, 0.12);
+}
+\`\`\`
+
+这段代码做的事情很朴素：传入一个颜色和透明度，返回一个带 alpha 的颜色值。以前这种逻辑经常散落在多个组件里，现在可以收成一个有名字的函数。
+
+## 更贴近设计系统的例子
+
+很多设计系统里都会有一组“阴影、边框、背景”的半透明派生色。如果每次都手写，时间久了很容易出现细微不一致。
+
+\`\`\`css
+@function --surface-border(--color) {
+  result: color-mix(in oklch, var(--color), white 72%);
+
+  @media (prefers-color-scheme: dark) {
+    result: color-mix(in oklch, var(--color), black 54%);
+  }
+}
+
+.panel {
+  --brand: #2563eb;
+  border-color: --surface-border(var(--brand));
+}
+\`\`\`
+
+这里函数内部可以包含条件规则。浅色模式和深色模式的计算逻辑被放在同一个函数里，组件只需要关心“我要一个适合当前主题的边框色”。
+
+## 它和 CSS 变量的关系
+
+\`@function\` 不是 \`var()\` 的替代品。更准确地说，它们应该一起用：
+
+- \`var()\` 适合保存可被层叠和覆盖的值
+- \`@function\` 适合复用一段从输入到输出的计算
+- \`@property\` 适合给自定义属性补类型、初始值和动画能力
+- \`if()\` 适合在单个属性值里做条件分支
+
+如果只是换一个主题色，用变量就够了。如果是“输入品牌色，产出一组符合规则的派生色”，函数会更清楚。
+
+## 什么时候值得用
+
+我会优先把它放在这些重复逻辑里试：
+
+- 根据品牌色生成半透明背景
+- 根据字号档位计算行高和间距
+- 把浅色/深色模式下的返回值收在一起
+- 封装流式排版里的 \`clamp()\` 公式
+- 给组件库暴露更少、更稳定的样式入口
+
+但也有边界：如果函数逻辑已经需要大量分支，或者团队成员看一眼很难判断最终结果，说明它可能不该藏在 CSS 函数里。CSS 的可维护性，很多时候来自“看见声明就知道大概效果”。
+
+## 渐进增强怎么写
+
+因为 \`@function\` 仍然是新能力，落地时要先给默认值，再在支持环境里开启增强。
+
+\`\`\`css
+.badge {
+  background: rgb(37 99 235 / 12%);
+}
+
+@supports at-rule(@function) {
+  @function --wash(--color) {
+    result: color-mix(in oklch, var(--color), white 84%);
+  }
+
+  .badge {
+    background: --wash(#2563eb);
+  }
+}
+\`\`\`
+
+这类写法的好处是：旧浏览器仍然有稳定样式，新浏览器得到更统一的设计系统计算。
+
+## 最后一句
+
+\`@function\` 真正让人期待的，不是“CSS 也能写函数了”这句话本身，而是它让设计系统里的很多重复计算有机会回到浏览器原生层。能少依赖一层构建时转换，样式规则就离最终运行环境更近一步。`
+  },
+  {
     id: "2026-07-02-scroll-target-group",
     title: "scroll-target-group：两行 CSS 做目录高亮",
     date: "2026-07-02",
