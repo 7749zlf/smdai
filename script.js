@@ -1430,10 +1430,24 @@ function trackView(postId) {
 }
 
 function scrollToReader() {
+  const getDocumentTop = (element) => {
+    let top = 0;
+    let node = element;
+
+    while (node) {
+      top += node.offsetTop || 0;
+      node = node.offsetParent;
+    }
+
+    return top;
+  };
+
   requestAnimationFrame(() => {
-    elements.readerPanel.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: Math.max(0, getDocumentTop(elements.readerPanel) - 24),
+        behavior: "smooth"
+      });
     });
   });
 }
