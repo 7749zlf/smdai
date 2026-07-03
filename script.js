@@ -15,7 +15,7 @@ const weeklyIdeas = [
   "把容器查询写进组件库，哪些场景最值回票价？",
   "表单交互里，什么时候该即时校验，什么时候该延后提示？",
   "CSS Layers 和设计系统一起用，会带来哪些维护收益？",
-  "CSS Carousel 适合替换哪些轻量轮播组件？"
+  "CSS Carousel 适合替换哪些轻量轮播和推荐位组件？"
 ];
 
 const seedPosts = [
