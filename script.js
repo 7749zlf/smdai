@@ -1,6 +1,7 @@
 const storageKey = "stack-front-daily-posts";
 const draftKey = "stack-front-draft";
 const interactionKey = "stack-front-interactions";
+const postsPerPage = 4;
 
 const coverPool = [
   "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80",
@@ -888,6 +889,7 @@ const elements = {
   ideaList: document.getElementById("idea-list"),
   tagStrip: document.getElementById("tag-strip"),
   postGrid: document.getElementById("post-grid"),
+  postPager: document.getElementById("post-pager"),
   readerPanel: document.getElementById("reader-panel"),
   archiveList: document.getElementById("archive-list"),
   rhythmList: document.getElementById("rhythm-list"),
@@ -909,6 +911,7 @@ const state = {
   activeTag: "全部",
   posts: [],
   activePostId: "",
+  currentPage: 1,
   interactions: {},
   viewedInSession: new Set()
 };
@@ -1107,6 +1110,27 @@ function ensureActivePost(filteredPosts) {
   }
 }
 
+function getPageCount(posts) {
+  return Math.max(1, Math.ceil(posts.length / postsPerPage));
+}
+
+function clampCurrentPage(posts) {
+  state.currentPage = Math.min(Math.max(1, state.currentPage), getPageCount(posts));
+}
+
+function getPagedPosts(posts) {
+  clampCurrentPage(posts);
+  const start = (state.currentPage - 1) * postsPerPage;
+  return posts.slice(start, start + postsPerPage);
+}
+
+function setPageForPost(postId, posts = getFilteredPosts()) {
+  const index = posts.findIndex((post) => post.id === postId);
+  if (index >= 0) {
+    state.currentPage = Math.floor(index / postsPerPage) + 1;
+  }
+}
+
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -1290,6 +1314,25 @@ function renderPostGrid(posts) {
   `).join("");
 }
 
+function renderPostPager(posts) {
+  const totalPages = getPageCount(posts);
+  if (!posts.length || totalPages <= 1) {
+    elements.postPager.innerHTML = "";
+    return;
+  }
+
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  elements.postPager.innerHTML = `
+    <button class="pager-button" type="button" data-page-action="previous" ${state.currentPage === 1 ? "disabled" : ""}>上一页</button>
+    <div class="pager-pages" aria-label="文章分页">
+      ${pages.map((page) => `
+        <button class="pager-button ${page === state.currentPage ? "is-active" : ""}" type="button" data-page="${page}" aria-current="${page === state.currentPage ? "page" : "false"}">${page}</button>
+      `).join("")}
+    </div>
+    <button class="pager-button" type="button" data-page-action="next" ${state.currentPage === totalPages ? "disabled" : ""}>下一页</button>
+  `;
+}
+
 function renderReader(post) {
   if (!post) {
     elements.readerPanel.innerHTML = `
@@ -1404,6 +1447,8 @@ function renderRhythm(posts) {
 
 function renderAll() {
   const filteredPosts = getFilteredPosts();
+  clampCurrentPage(filteredPosts);
+  const pagedPosts = getPagedPosts(filteredPosts);
   ensureActivePost(filteredPosts);
   const activePost = filteredPosts.find((post) => post.id === state.activePostId);
 
@@ -1412,7 +1457,8 @@ function renderAll() {
   renderHotTags(state.posts);
   renderIdeas();
   renderTagStrip(state.posts);
-  renderPostGrid(filteredPosts);
+  renderPostGrid(pagedPosts);
+  renderPostPager(filteredPosts);
   renderReader(activePost);
   renderArchive(state.posts);
   renderRhythm(state.posts);
@@ -1454,6 +1500,7 @@ function scrollToReader() {
 
 function setActivePost(postId) {
   state.activePostId = postId;
+  setPageForPost(postId);
   trackView(postId);
   history.pushState(null, "", `#${postId}`);
   renderAll();
@@ -1566,6 +1613,7 @@ function publishPost(event) {
   elements.postDate.value = todayIso();
   state.search = "";
   state.activeTag = "全部";
+  state.currentPage = 1;
   elements.searchInput.value = "";
   setActivePost(post.id);
 }
@@ -1624,6 +1672,25 @@ function wireEvents() {
     const tagButton = event.target.closest("[data-tag]");
     if (tagButton) {
       state.activeTag = tagButton.getAttribute("data-tag");
+      state.currentPage = 1;
+      renderAll();
+      return;
+    }
+
+    const pageButton = event.target.closest("[data-page], [data-page-action]");
+    if (pageButton) {
+      const totalPages = getPageCount(getFilteredPosts());
+      const page = pageButton.getAttribute("data-page");
+      const action = pageButton.getAttribute("data-page-action");
+
+      if (page) {
+        state.currentPage = Number(page);
+      } else if (action === "previous") {
+        state.currentPage = Math.max(1, state.currentPage - 1);
+      } else if (action === "next") {
+        state.currentPage = Math.min(totalPages, state.currentPage + 1);
+      }
+
       renderAll();
       return;
     }
@@ -1654,6 +1721,7 @@ function wireEvents() {
 
   elements.searchInput.addEventListener("input", (event) => {
     state.search = event.target.value.trim();
+    state.currentPage = 1;
     renderAll();
   });
 
