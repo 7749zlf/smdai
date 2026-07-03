@@ -1545,6 +1545,17 @@ function ensureActivePost(filteredPosts) {
   }
 }
 
+function ensureActivePostInPage(pagedPosts) {
+  if (!pagedPosts.length) {
+    return;
+  }
+
+  const exists = pagedPosts.some((post) => post.id === state.activePostId);
+  if (!exists) {
+    state.activePostId = pagedPosts[0].id;
+  }
+}
+
 function getPageCount(posts) {
   return Math.max(1, Math.ceil(posts.length / postsPerPage));
 }
@@ -1907,9 +1918,10 @@ function renderRhythm(posts) {
 
 function renderAll() {
   const filteredPosts = getFilteredPosts();
+  ensureActivePost(filteredPosts);
   clampCurrentPage(filteredPosts);
   const pagedPosts = getPagedPosts(filteredPosts);
-  ensureActivePost(filteredPosts);
+  ensureActivePostInPage(pagedPosts);
   const activePost = filteredPosts.find((post) => post.id === state.activePostId);
 
   renderMetrics(state.posts);
@@ -1967,6 +1979,12 @@ function setActivePost(postId) {
   history.pushState(null, "", `#${postId}`);
   renderAll();
   scrollToReader();
+}
+
+function syncHashToActivePost() {
+  if (state.activePostId && location.hash.replace("#", "") !== state.activePostId) {
+    history.pushState(null, "", `#${state.activePostId}`);
+  }
 }
 
 function persistPosts() {
@@ -2136,6 +2154,7 @@ function wireEvents() {
       state.activeTag = tagButton.getAttribute("data-tag");
       state.currentPage = 1;
       renderAll();
+      syncHashToActivePost();
       return;
     }
 
@@ -2154,6 +2173,7 @@ function wireEvents() {
       }
 
       renderAll();
+      syncHashToActivePost();
       return;
     }
 
@@ -2185,6 +2205,7 @@ function wireEvents() {
     state.search = event.target.value.trim();
     state.currentPage = 1;
     renderAll();
+    syncHashToActivePost();
   });
 
   elements.composeForm.addEventListener("submit", publishPost);
@@ -2201,6 +2222,7 @@ function wireEvents() {
     const postId = location.hash.replace("#", "");
     if (postId && state.posts.some((post) => post.id === postId)) {
       state.activePostId = postId;
+      setPageForPost(postId);
       trackView(postId);
       renderAll();
     }
@@ -2234,6 +2256,7 @@ function init() {
   const hashPostId = location.hash.replace("#", "");
   if (hashPostId && state.posts.some((post) => post.id === hashPostId)) {
     state.activePostId = hashPostId;
+    setPageForPost(hashPostId);
   } else if (state.posts.length) {
     state.activePostId = state.posts[0].id;
   }

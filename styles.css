@@ -440,10 +440,9 @@ a {
 }
 
 .post-list-panel {
-  height: var(--post-list-height, 540px);
   max-height: var(--post-list-height, 540px);
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -928,7 +927,6 @@ a {
   }
 
   .post-list-panel {
-    height: auto;
     max-height: none;
   }
 
