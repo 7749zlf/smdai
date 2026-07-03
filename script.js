@@ -1,7 +1,7 @@
 const storageKey = "stack-front-daily-posts";
 const draftKey = "stack-front-draft";
 const interactionKey = "stack-front-interactions";
-const postsPerPage = 4;
+const defaultPostsPerPage = 4;
 
 const coverPool = [
   "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80",
@@ -1347,6 +1347,7 @@ const state = {
   posts: [],
   activePostId: "",
   currentPage: 1,
+  postsPerPage: defaultPostsPerPage,
   interactions: {},
   viewedInSession: new Set()
 };
@@ -1557,7 +1558,7 @@ function ensureActivePostInPage(pagedPosts) {
 }
 
 function getPageCount(posts) {
-  return Math.max(1, Math.ceil(posts.length / postsPerPage));
+  return Math.max(1, Math.ceil(posts.length / state.postsPerPage));
 }
 
 function clampCurrentPage(posts) {
@@ -1566,15 +1567,68 @@ function clampCurrentPage(posts) {
 
 function getPagedPosts(posts) {
   clampCurrentPage(posts);
-  const start = (state.currentPage - 1) * postsPerPage;
-  return posts.slice(start, start + postsPerPage);
+  const start = (state.currentPage - 1) * state.postsPerPage;
+  return posts.slice(start, start + state.postsPerPage);
 }
 
 function setPageForPost(postId, posts = getFilteredPosts()) {
   const index = posts.findIndex((post) => post.id === postId);
   if (index >= 0) {
-    state.currentPage = Math.floor(index / postsPerPage) + 1;
+    state.currentPage = Math.floor(index / state.postsPerPage) + 1;
   }
+}
+
+function getGridColumnCount() {
+  if (!elements.postGrid) {
+    return 1;
+  }
+
+  const columns = getComputedStyle(elements.postGrid).gridTemplateColumns;
+  return Math.max(1, columns.split(" ").filter(Boolean).length);
+}
+
+function estimatePostsPerPage() {
+  if (!elements.postListPanel || !elements.postGrid || window.innerWidth <= 1080) {
+    return defaultPostsPerPage;
+  }
+
+  const panelHeight = Number.parseFloat(getComputedStyle(elements.postListPanel).getPropertyValue("--post-list-height"));
+  if (!Number.isFinite(panelHeight) || panelHeight <= 0) {
+    return defaultPostsPerPage;
+  }
+
+  const sampleCard = elements.postGrid.querySelector(".post-card");
+  if (!sampleCard) {
+    return defaultPostsPerPage;
+  }
+
+  const gridStyle = getComputedStyle(elements.postGrid);
+  const panelStyle = getComputedStyle(elements.postListPanel);
+  const hasPager = Boolean(elements.postPager?.textContent.trim());
+  const pagerHeight = hasPager ? elements.postPager.offsetHeight : 0;
+  const rowGap = Number.parseFloat(gridStyle.rowGap || gridStyle.gap) || 0;
+  const panelGap = hasPager ? Number.parseFloat(panelStyle.rowGap || panelStyle.gap) || 0 : 0;
+  const availableHeight = Math.max(0, panelHeight - pagerHeight - panelGap);
+  const cardHeight = sampleCard.getBoundingClientRect().height;
+
+  if (!cardHeight) {
+    return defaultPostsPerPage;
+  }
+
+  const rows = Math.max(1, Math.floor((availableHeight + rowGap) / (cardHeight + rowGap)));
+  return Math.max(defaultPostsPerPage, rows * getGridColumnCount());
+}
+
+function updatePostsPerPage() {
+  const nextPostsPerPage = estimatePostsPerPage();
+  if (nextPostsPerPage !== state.postsPerPage) {
+    const activePostId = state.activePostId;
+    state.postsPerPage = nextPostsPerPage;
+    setPageForPost(activePostId);
+    return true;
+  }
+
+  return false;
 }
 
 function escapeHtml(text) {
@@ -1870,11 +1924,20 @@ function syncPostListHeight() {
   });
 }
 
+function refreshPaginationSize() {
+  syncPostListHeight();
+  requestAnimationFrame(() => {
+    if (updatePostsPerPage()) {
+      renderAll();
+    }
+  });
+}
+
 function syncPostListHeightAfterReaderMediaLoad() {
   elements.readerPanel.querySelectorAll("img").forEach((image) => {
     if (!image.complete) {
-      image.addEventListener("load", syncPostListHeight, { once: true });
-      image.addEventListener("error", syncPostListHeight, { once: true });
+      image.addEventListener("load", refreshPaginationSize, { once: true });
+      image.addEventListener("error", refreshPaginationSize, { once: true });
     }
   });
 }
@@ -1920,9 +1983,9 @@ function renderAll() {
   const filteredPosts = getFilteredPosts();
   ensureActivePost(filteredPosts);
   clampCurrentPage(filteredPosts);
-  const pagedPosts = getPagedPosts(filteredPosts);
+  let pagedPosts = getPagedPosts(filteredPosts);
   ensureActivePostInPage(pagedPosts);
-  const activePost = filteredPosts.find((post) => post.id === state.activePostId);
+  let activePost = filteredPosts.find((post) => post.id === state.activePostId);
 
   renderMetrics(state.posts);
   renderFeatured(filteredPosts[0]);
@@ -1934,6 +1997,21 @@ function renderAll() {
   renderReader(activePost);
   syncPostListHeight();
   syncPostListHeightAfterReaderMediaLoad();
+
+  requestAnimationFrame(() => {
+    if (updatePostsPerPage()) {
+      pagedPosts = getPagedPosts(filteredPosts);
+      ensureActivePostInPage(pagedPosts);
+      activePost = filteredPosts.find((post) => post.id === state.activePostId);
+      renderPostGrid(pagedPosts);
+      renderPostPager(filteredPosts);
+      renderReader(activePost);
+      syncPostListHeight();
+      syncPostListHeightAfterReaderMediaLoad();
+      syncHashToActivePost();
+    }
+  });
+
   renderArchive(state.posts);
   renderRhythm(state.posts);
 }
@@ -2228,7 +2306,7 @@ function wireEvents() {
     }
   });
 
-  window.addEventListener("resize", syncPostListHeight);
+  window.addEventListener("resize", refreshPaginationSize);
 }
 
 function hydrateDraft() {
