@@ -20,6 +20,198 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-04-css-shape-function",
+    title: "CSS shape()：把不规则图形写进样式里",
+    date: "2026-07-04",
+    createdAt: Date.parse("2026-07-04T10:00:00+08:00"),
+    tags: ["CSS", "图形", "布局"],
+    cover: coverPool[1],
+    excerpt: "CSS shape() 让 clip-path、shape-outside 这类图形能力更接近真实设计稿。不规则裁切、文字绕排和装饰形状，可以少依赖 SVG 和额外资源。",
+    content: `
+## 为什么值得关注
+
+网页布局长期以来默认是矩形思维：盒子、卡片、图片、按钮，大多都沿着直角边界排布。可真实设计里经常有波浪、斜切、气泡、弧形边缘和不规则图片裁切。过去要实现这些效果，常见做法是准备 SVG、图片蒙版，或者写一串很难读的 \`path()\`。
+
+\`shape()\` 的价值，是让 CSS 可以用更接近 CSS 语法的方式描述几何路径。它能和 \`clip-path\`、\`shape-outside\` 等属性配合，让“不规则图形”不再一定要跑到外部资源里。
+
+## 一个基础例子
+
+\`\`\`css
+.cover {
+  clip-path: shape(
+    from 0 12%,
+    curve to 100% 0 with 42% 0,
+    line to 100% 100%,
+    line to 0 100%,
+    close
+  );
+}
+\`\`\`
+
+这段代码描述的是一个顶部带弧线的裁切区域。相比把一整段 SVG path 字符串塞进 CSS，\`shape()\` 的语义更容易读：从哪里开始、怎么弯、连到哪里、最后闭合。
+
+## 和文字绕排一起用
+
+\`shape-outside\` 是另一个很适合搭配的地方。比如让正文沿着图片的波浪边绕排：
+
+\`\`\`css
+.float-art {
+  float: left;
+  inline-size: 260px;
+  aspect-ratio: 1;
+  shape-outside: shape(
+    from 0 0,
+    curve to 100% 20% with 70% 0,
+    curve to 85% 100% with 120% 70%,
+    line to 0 100%,
+    close
+  );
+}
+\`\`\`
+
+这种效果以前经常需要设计和工程之间反复对齐资源。现在如果形状只是布局表达，CSS 自己就能承接一部分。
+
+## 它适合哪些场景
+
+我会优先在这些地方试：
+
+- 营销页的图片裁切
+- 文章封面的波浪边缘
+- 头像或徽章的特殊轮廓
+- 图文混排里的文字绕排
+- 设计系统里的轻量装饰形状
+
+不太适合的场景是复杂插画。复杂图形还是交给 SVG 更稳，尤其当路径很多、需要复用、需要独立编辑时。
+
+## 渐进增强思路
+
+新图形能力最好先写一个保底样式：
+
+\`\`\`css
+.cover {
+  border-radius: 16px;
+}
+
+@supports (clip-path: shape(from 0 0, line to 100% 0, close)) {
+  .cover {
+    border-radius: 0;
+    clip-path: shape(
+      from 0 12%,
+      curve to 100% 0 with 42% 0,
+      line to 100% 100%,
+      line to 0 100%,
+      close
+    );
+  }
+}
+\`\`\`
+
+旧浏览器看到的是规整圆角，新浏览器得到更接近设计稿的形状。
+
+## 最后一句
+
+\`shape()\` 不是为了替代 SVG，而是把一类“本来就是样式表达”的几何形状留在 CSS 里。能少引入一张资源，就少一层维护和加载成本。`
+  },
+  {
+    id: "2026-07-04-advanced-css-attr",
+    title: "增强版 attr()：HTML 属性终于能参与更多样式计算",
+    date: "2026-07-04",
+    createdAt: Date.parse("2026-07-04T09:00:00+08:00"),
+    tags: ["CSS", "HTML", "组件"],
+    cover: coverPool[0],
+    excerpt: "Chrome 133 升级了 CSS attr()：不再只能用于 content，也不再只能当字符串。组件可以把 data-* 属性更自然地映射进样式。",
+    content: `
+## 老版 attr() 的限制
+
+\`attr()\` 很早就存在，但以前最常见的用法几乎只有一种：在伪元素的 \`content\` 里读 HTML 属性。
+
+\`\`\`css
+button::after {
+  content: attr(data-count);
+}
+\`\`\`
+
+这当然有用，但范围太窄。真实组件里，我们更常想把属性值用于颜色、尺寸、间距、进度、层级，而不只是展示一段文本。
+
+Chrome 133 开始支持增强版 \`attr()\`，它可以用于更多 CSS 属性，也可以把属性解析成指定类型。
+
+## 读取颜色
+
+\`\`\`html
+<article class="note" data-accent="#2563eb">
+  ...
+</article>
+\`\`\`
+
+\`\`\`css
+.note {
+  border-color: attr(data-accent type(<color>), #64748b);
+}
+\`\`\`
+
+这里的 \`type(<color>)\` 告诉浏览器：把 \`data-accent\` 按颜色解析。如果属性不存在或解析失败，就用后面的兜底值。
+
+## 读取数字和尺寸
+
+评分、进度、强调程度这类数据，也可以更自然地从 HTML 映射到样式：
+
+\`\`\`html
+<div class="meter" data-value="72"></div>
+\`\`\`
+
+\`\`\`css
+.meter {
+  --value: attr(data-value type(<number>), 0);
+  inline-size: calc(var(--value) * 1%);
+}
+\`\`\`
+
+这让简单组件少了一些“为了样式同步而写的 JS”。HTML 负责表达状态，CSS 负责消费状态。
+
+## 它和 CSS 变量怎么分工
+
+\`attr()\` 和 \`var()\` 不是竞争关系。
+
+- \`attr()\` 适合从 HTML 属性读取组件实例数据
+- \`var()\` 适合在 CSS 层级里传递设计令牌和可覆盖值
+- 两者可以组合：先用 \`attr()\` 读入，再赋给自定义属性
+
+\`\`\`css
+.badge {
+  --tone: attr(data-tone type(<custom-ident>), info);
+}
+\`\`\`
+
+这类写法让组件 API 更贴近 HTML：一个 \`data-tone\` 属性就能影响样式，不一定非要额外生成 class。
+
+## 使用时要谨慎的点
+
+我会注意几个边界：
+
+- 外部输入的属性值不要直接控制高风险样式
+- 一定给兜底值
+- 不要把复杂业务状态全塞进 \`data-*\`
+- 需要跨浏览器稳定时，用 \`@supports\` 包一层增强
+
+例如：
+
+\`\`\`css
+.note {
+  border-color: #64748b;
+}
+
+@supports (color: attr(data-color type(<color>), red)) {
+  .note {
+    border-color: attr(data-accent type(<color>), #64748b);
+  }
+}
+\`\`\`
+
+## 最后一句
+
+增强版 \`attr()\` 让 HTML 属性和 CSS 样式之间多了一条原生通道。它最适合处理组件级的小状态：颜色、进度、密度、强调程度。少一点同步 class，组件就更像一个自描述的 HTML 片段。`
+  },
+  {
     id: "2026-07-03-scroll-state-queries",
     title: "Scroll State Queries：让滚动状态自己暴露出来",
     date: "2026-07-03",
