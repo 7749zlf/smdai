@@ -20,6 +20,208 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-05-css-reading-flow",
+    title: "reading-flow：让视觉顺序和键盘顺序重新对齐",
+    date: "2026-07-05",
+    createdAt: Date.parse("2026-07-05T10:00:00+08:00"),
+    tags: ["CSS", "可访问性", "布局"],
+    cover: coverPool[3],
+    excerpt: "Flex 和 Grid 很容易把视觉顺序排得很漂亮，却让键盘 Tab 顺序还停在 DOM 顺序里。reading-flow 和 reading-order 正是为这个断层补位。",
+    content: `
+## 为什么这个问题值得单独记
+
+现代布局很自由。我们可以用 Grid 把卡片放到任意区域，也可以用 Flex 的 \`order\` 或 \`row-reverse\` 调整视觉顺序。问题是，视觉顺序变了以后，键盘 Tab 顺序、辅助技术读取顺序往往仍然跟着 DOM 走。
+
+这就会出现一个很别扭的体验：用户看到焦点应该从左到右、从上到下移动，但实际按 Tab 时，焦点突然跳到另一个区域。页面越像仪表盘、卡片墙、编辑器面板，这种断层越明显。
+
+\`reading-flow\` 和 \`reading-order\` 的目标，就是让 CSS 能明确表达“这个布局的线性阅读顺序应该怎么走”。
+
+## Flex 里的基础写法
+
+假设视觉上用了反向排列：
+
+\`\`\`css
+.toolbar {
+  display: flex;
+  flex-direction: row-reverse;
+  reading-flow: flex-visual;
+}
+\`\`\`
+
+\`reading-flow: flex-visual\` 表达的是：顺序跟着视觉结果走。这样用户看到的顺序和键盘导航顺序更接近，不会因为 DOM 原始顺序而突然跳动。
+
+如果你更希望顺序跟着 flex 布局流，而不是最终视觉位置，也可以考虑 \`flex-flow\`。关键是别让浏览器和维护者猜。
+
+## Grid 里的常见场景
+
+Grid 更容易出现问题，因为一个元素可以被放到任意行列：
+
+\`\`\`css
+.dashboard {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  reading-flow: grid-rows;
+}
+\`\`\`
+
+\`grid-rows\` 更适合多数从上到下阅读的内容区。如果你的界面更像列式面板，也可以考虑 \`grid-columns\`。
+
+这类属性的价值，不是让你随便打乱 DOM，而是在视觉布局确实需要重排时，给键盘和辅助技术一个更合理的线性顺序。
+
+## 手动指定顺序
+
+当自动规则还不够时，可以使用 \`reading-order\`：
+
+\`\`\`css
+.layout {
+  reading-flow: source-order;
+}
+
+.summary {
+  reading-order: 1;
+}
+
+.details {
+  reading-order: 2;
+}
+
+.actions {
+  reading-order: 3;
+}
+\`\`\`
+
+这很适合仪表盘、复杂表单和编辑器工具区。你可以保留结构清晰的 HTML，同时把实际交互顺序声明出来。
+
+## 它不是重排 DOM 的借口
+
+我的原则是：能用合理 DOM 顺序解决，就先用 DOM。CSS 阅读顺序应该是补充，不是把混乱结构藏起来。
+
+更稳的使用边界：
+
+- 内容本身有明确阅读顺序时，优先让 DOM 和视觉一致
+- 复杂 Grid 或 Flex 重排后，再用 \`reading-flow\` 校正导航顺序
+- 交互控件多的区域一定要实际按 Tab 测一遍
+- 不要为了视觉炫技制造新的可访问性负担
+
+## 渐进增强
+
+旧浏览器不支持时，页面仍然会按 DOM 顺序工作。所以落地前最重要的是保证 DOM 顺序本身不离谱，然后再增强：
+
+\`\`\`css
+@supports (reading-flow: grid-rows) {
+  .dashboard {
+    reading-flow: grid-rows;
+  }
+}
+\`\`\`
+
+## 最后一句
+
+\`reading-flow\` 解决的不是“布局怎么摆”，而是“用户怎么走过这个布局”。当前端开始认真处理键盘路径和辅助技术路径，页面才不只是看起来有秩序，而是真的可用。`
+  },
+  {
+    id: "2026-07-05-css-sibling-functions",
+    title: "sibling-index()：纯 CSS 做动态错峰动画",
+    date: "2026-07-05",
+    createdAt: Date.parse("2026-07-05T09:00:00+08:00"),
+    tags: ["CSS", "动画", "组件"],
+    cover: coverPool[4],
+    excerpt: "sibling-index() 和 sibling-count() 能让 CSS 知道元素在兄弟节点里的位置和总数。列表错峰动画、分布式延迟和动态装饰可以少写一层 JS。",
+    content: `
+## 为什么它很顺手
+
+列表动画经常需要“第几个元素延迟多少毫秒”。过去常见做法是给每个子项写 \`style="--i: 3"\`，或者由 JS 遍历节点加索引。能用，但总有一点像为了样式效果额外搬状态。
+
+\`sibling-index()\` 和 \`sibling-count()\` 把这件事留给 CSS：浏览器本来就知道一个元素是第几个兄弟，也知道兄弟总数，现在这些数字可以直接参与计算。
+
+## 最常见的错峰动画
+
+\`\`\`css
+.menu[open] > * {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: item-in 0.36s ease forwards;
+  animation-delay: calc(sibling-index() * 48ms);
+}
+
+@keyframes item-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+\`\`\`
+
+这段代码不需要手动维护 \`--index\`。菜单里有 3 项就是 3 项的节奏，有 8 项就是 8 项的节奏。
+
+## 用总数做分布
+
+\`sibling-count()\` 适合处理“根据总数均匀分布”的场景，比如一组装饰点、评分星星、步骤条：
+
+\`\`\`css
+.step {
+  --progress: calc(sibling-index() / sibling-count());
+  opacity: calc(0.4 + var(--progress) * 0.6);
+}
+\`\`\`
+
+它不是只能做动画，也能参与透明度、偏移、旋转、颜色混合等计算。只要这个样式和“当前元素在一组元素里的位置”有关，就可以考虑它。
+
+## 组件里最有价值
+
+我最想把它放进这些组件：
+
+- 弹窗内容逐项进入
+- 下拉菜单错峰显示
+- 卡片墙轻微错位
+- 时间线节点渐进出现
+- 标签云按位置调整轻重
+
+这些地方以前常常要在模板层生成索引。现在如果只是视觉表现，CSS 自己就能完成。
+
+## 注意节奏别过量
+
+错峰动画很容易写得太“演”。尤其是操作型界面，延迟太长会让用户觉得反应慢。我的经验是：
+
+- 单项延迟控制在 30ms 到 60ms 左右
+- 总延迟不要随着项目数无限增长
+- 重要操作按钮不要被过长动画挡住
+- 尊重 \`prefers-reduced-motion\`
+
+\`\`\`css
+@media (prefers-reduced-motion: reduce) {
+  .menu[open] > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+\`\`\`
+
+## 渐进增强
+
+目前这仍然属于新能力，最好给一个无索引的默认体验：
+
+\`\`\`css
+.menu[open] > * {
+  animation: item-in 0.36s ease forwards;
+}
+
+@supports (animation-delay: calc(sibling-index() * 1ms)) {
+  .menu[open] > * {
+    animation-delay: calc(sibling-index() * 48ms);
+  }
+}
+\`\`\`
+
+旧浏览器看到的是统一动画，新浏览器得到更细腻的节奏。
+
+## 最后一句
+
+\`sibling-index()\` 最让我喜欢的地方，是它把“第几个元素”这个纯结构信息交给 CSS 使用。为了动画而给 DOM 塞索引的情况会少一些，组件模板也能更干净。`
+  },
+  {
     id: "2026-07-04-css-shape-function",
     title: "CSS shape()：把不规则图形写进样式里",
     date: "2026-07-04",
