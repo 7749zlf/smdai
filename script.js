@@ -20,6 +20,180 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-06-css-text-box",
+    title: "CSS text-box：终于不用再靠魔法数垂直居中文字",
+    date: "2026-07-06",
+    createdAt: Date.parse("2026-07-06T10:00:00+08:00"),
+    tags: ["CSS", "排版", "设计系统"],
+    cover: coverPool[1],
+    excerpt: "text-box、text-box-trim 和 text-box-edge 可以裁掉字体上下多余的 leading，让按钮、标签和标题的视觉居中更接近设计稿。",
+    content: `
+## 为什么文字总是看起来“不居中”
+
+很多前端都遇到过一个小别扭：按钮明明用了 \`align-items: center\`，文字看起来还是偏上或偏下。原因不一定是布局错了，而是字体本身带有上下留白，也就是 line box 里的 leading。
+
+过去我们常用一些不太优雅的办法修：调 \`line-height\`、给文字加一点 \`transform\`、单独为中文和英文写不同 padding，或者在设计系统里藏几个经验值。
+
+\`text-box\` 这组属性想解决的正是这个问题：让 CSS 可以明确裁掉文本框上下多余空间，让视觉对齐更接近字形本身。
+
+## 最小写法
+
+\`\`\`css
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 32px;
+  padding-inline: 12px;
+  text-box: trim-both cap alphabetic;
+}
+\`\`\`
+
+\`text-box\` 是一个简写，可以同时控制裁剪方向和参考边缘。你也可以拆开写：
+
+\`\`\`css
+.chip {
+  text-box-trim: trim-both;
+  text-box-edge: cap alphabetic;
+}
+\`\`\`
+
+这类写法对按钮、徽标、导航标签尤其有用。它不是改变字体本身，而是让布局时参与对齐的文本框更贴近真实可见字形。
+
+## 它最适合哪些地方
+
+我会优先在这些组件里试：
+
+- 小按钮和图标按钮里的文字
+- 标签、徽章、状态 pill
+- 大标题和图片边缘的精确对齐
+- 表格单元格里的紧凑文本
+- 设计系统里的 typography token
+
+它的价值不是让所有文字都变紧，而是减少那些“看起来差 1 到 2 像素”的手工补丁。
+
+## 和 line-height 的关系
+
+\`line-height\` 仍然重要，它控制多行文本的节奏和阅读舒适度。\`text-box\` 更像是对单行或关键排版场景的精细修正。
+
+我的经验是：
+
+- 正文段落不要轻易裁得太狠
+- UI 控件里的单行文本更适合使用
+- 大标题可以小范围试，尤其是和图片、边框对齐时
+- 多语言项目要测试中文、英文、数字和符号混排
+
+## 渐进增强
+
+\`\`\`css
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 28px;
+  padding-inline: 10px;
+}
+
+@supports (text-box-trim: trim-both) {
+  .badge {
+    text-box: trim-both cap alphabetic;
+  }
+}
+\`\`\`
+
+旧浏览器仍然使用传统居中，新浏览器得到更精准的视觉对齐。
+
+## 最后一句
+
+\`text-box\` 解决的是一个长期存在但很难说清的小痛点：不是布局没居中，而是文字盒子本身不等于可见字形。把这个能力交给 CSS，比继续在组件里堆魔法数要稳得多。`
+  },
+  {
+    id: "2026-07-06-scroll-triggered-animations",
+    title: "Scroll-triggered Animations：滚到位置再触发动画",
+    date: "2026-07-06",
+    createdAt: Date.parse("2026-07-06T09:00:00+08:00"),
+    tags: ["CSS", "动画", "滚动"],
+    cover: coverPool[4],
+    excerpt: "Scroll-driven animation 让动画进度跟随滚动，scroll-triggered animation 则更像“滚到某个位置后播放一次”。两者解决的是不同交互。",
+    content: `
+## 先分清两个概念
+
+滚动动画已经有一条很清晰的路线：scroll-driven animations 让动画进度跟着滚动位置走。你滚到一半，动画也走到一半；往回滚，动画也倒回去。
+
+但很多产品页面想要的不是这种进度绑定，而是“滚到这里以后触发一次动画”：卡片淡入、数字开始跳动、步骤线逐段出现。Chrome 团队把这类能力称为 scroll-triggered animations，并计划在 2026 年继续推进。
+
+简单说：
+
+- scroll-driven：滚动控制动画进度
+- scroll-triggered：跨过某个滚动位置后触发动画
+
+## 过去我们怎么做
+
+最常见方案是 IntersectionObserver：
+
+\`\`\`js
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("is-visible");
+    }
+  });
+});
+
+document.querySelectorAll(".reveal").forEach((item) => observer.observe(item));
+\`\`\`
+
+这套方案很成熟，但每个项目都要重复写一遍：观察元素、加 class、取消观察、处理阈值和一次性触发。
+
+scroll-triggered animations 的方向，是把这类“滚过阈值后播放动画”的常见模式放进平台能力里。
+
+## 它适合的交互
+
+我会把它用在这些地方：
+
+- 首屏之后的内容淡入
+- 时间线节点进入视口后播放
+- 数据卡片滚到可见区域后强调
+- 长文里的章节插图轻微进入
+- 产品介绍页的步骤动画
+
+这些动画通常不需要和滚动进度一一绑定，只需要在合适时机开始。
+
+## 设计上要克制
+
+滚动触发动画很容易过量。页面每滚一屏都有一堆元素飞进来，用户很快会累。
+
+我会遵守几个规则：
+
+- 动画只服务信息层级，不把每个元素都做成特效
+- 延迟要短，尽量不阻挡阅读
+- 关键内容不要依赖动画结束才可见
+- 尊重 \`prefers-reduced-motion\`
+
+\`\`\`css
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+\`\`\`
+
+## 和现有能力怎么配合
+
+在 scroll-triggered animations 完全稳定之前，IntersectionObserver 仍然是生产里的可靠选择。已经能用 CSS scroll-driven animations 的地方，也不需要硬换。
+
+我的判断是：
+
+- 进度条、视差、阅读进度，用 scroll-driven
+- 进入视口后播放一次，用 scroll-triggered
+- 需要复杂业务判断，用 JavaScript
+- 低风险视觉增强，优先渐进增强
+
+## 最后一句
+
+滚动动画不应该只有“滚动绑定进度”这一种模型。很多时候我们只是想让内容在合适的时机开始出现。scroll-triggered animations 如果进入稳定阶段，会让这类页面少写一大段观察和状态同步代码。`
+  },
+  {
     id: "2026-07-05-css-reading-flow",
     title: "reading-flow：让视觉顺序和键盘顺序重新对齐",
     date: "2026-07-05",
