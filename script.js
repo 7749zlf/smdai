@@ -20,6 +20,120 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-06-css-corner-shape",
+    title: "corner-shape：圆角不只能是圆的",
+    date: "2026-07-06",
+    createdAt: Date.parse("2026-07-06T11:00:00+08:00"),
+    tags: ["CSS", "UI", "设计系统"],
+    cover: coverPool[2],
+    excerpt: "corner-shape 建立在 border-radius 之上，可以把圆角变成 squircle、notch、scoop 或 bevel。卡片和按钮终于不用靠 SVG 蒙版做特殊角了。",
+    content: `
+## 为什么值得写它
+
+\`border-radius\` 很好用，但它只回答一个问题：角有多圆。真实设计系统里，角的气质往往不止“圆或不圆”：有些产品喜欢更柔和的 squircle，有些卡片想要内凹的 scoop，有些按钮需要切角 bevel，有些标签想做 notch。
+
+过去这些效果经常要靠 SVG、mask、伪元素或者图片资源来补。Chrome 139 开始支持的 \`corner-shape\`，让我们可以在已有 \`border-radius\` 的基础上，继续指定角的几何形状。
+
+## 最小写法
+
+\`\`\`css
+.card {
+  border-radius: 24px;
+  corner-shape: squircle;
+}
+\`\`\`
+
+这段代码里，\`border-radius\` 仍然决定角的尺寸，\`corner-shape\` 决定角的形态。没有非零的 \`border-radius\`，\`corner-shape\` 不会产生效果。
+
+几个常见值很直观：
+
+- \`round\`：默认圆角
+- \`squircle\`：介于方和圆之间的柔和角
+- \`bevel\`：切角
+- \`scoop\`：内凹弧形
+- \`notch\`：内切缺口
+- \`square\`：即使有半径也保持直角
+
+## 单独控制每个角
+
+\`corner-shape\` 和 \`border-radius\` 类似，可以写一到四个值：
+
+\`\`\`css
+.ticket {
+  border-radius: 20px;
+  corner-shape: scoop notch squircle bevel;
+}
+\`\`\`
+
+也可以使用长属性单独控制：
+
+\`\`\`css
+.callout {
+  border-radius: 18px;
+  corner-top-left-shape: notch;
+  corner-bottom-right-shape: scoop;
+}
+\`\`\`
+
+这对状态卡片、票券、提示框和品牌化按钮很有用。不同角可以承担不同语义，比如“可拖拽”“高优先级”“折角标记”。
+
+## 为什么它比蒙版更舒服
+
+使用 \`corner-shape\` 时，背景、边框、阴影、outline、overflow 等效果会跟随角形状。也就是说，它仍然属于盒模型的一部分，而不是在盒子外面贴一层遮罩。
+
+\`\`\`css
+.panel {
+  border: 1px solid #d7dee8;
+  border-radius: 28px;
+  corner-shape: scoop;
+  box-shadow: 0 18px 48px rgb(15 23 42 / 14%);
+}
+\`\`\`
+
+这比 SVG mask 更容易维护，也更容易和主题色、hover、focus-visible 等状态一起工作。
+
+## 设计系统里怎么用
+
+我会把它当成“角形 token”的一部分，而不是到处随手写：
+
+\`\`\`css
+:root {
+  --shape-soft: squircle;
+  --shape-action: bevel;
+  --shape-note: scoop;
+}
+
+.button {
+  border-radius: 12px;
+  corner-shape: var(--shape-action);
+}
+\`\`\`
+
+这样团队讨论的就不是“这个角要不要用某个 mask 文件”，而是“这个组件应该用哪种角形语义”。
+
+## 渐进增强
+
+因为支持还需要看目标浏览器，先写普通圆角，再增强：
+
+\`\`\`css
+.card {
+  border-radius: 24px;
+}
+
+@supports (corner-shape: squircle) {
+  .card {
+    corner-shape: squircle;
+  }
+}
+\`\`\`
+
+旧浏览器看到稳定圆角，新浏览器得到更有品牌感的角形。
+
+## 最后一句
+
+\`corner-shape\` 的意义不是让每个盒子都变花，而是把“角的风格”变成 CSS 可以直接表达的设计语言。少一个蒙版资源，少一段伪元素补丁，UI 组件就更接近原生盒模型。`
+  },
+  {
     id: "2026-07-06-css-text-box",
     title: "CSS text-box：终于不用再靠魔法数垂直居中文字",
     date: "2026-07-06",
