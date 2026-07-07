@@ -20,6 +20,125 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-07-css-custom-functions",
+    title: "CSS @function：把可复用计算留在原生样式里",
+    date: "2026-07-07",
+    createdAt: Date.parse("2026-07-07T10:00:00+08:00"),
+    tags: ["CSS", "设计系统", "工程化"],
+    cover: coverPool[3],
+    excerpt: "CSS 自定义函数让样式表可以定义带参数和返回值的函数。 spacing、透明色、响应式尺寸这类 token 计算，终于不一定要交给预处理器了。",
+    content: `
+## 为什么值得关注
+
+CSS 过去也能复用值：自定义属性、\`calc()\`、\`clamp()\`、\`color-mix()\` 已经覆盖了很多场景。但一旦计算规则需要参数，团队通常会把逻辑放到 Sass 函数、构建脚本或组件 JS 里。
+
+\`@function\` 想补上的就是这块：在原生 CSS 里声明一个带参数、可返回值的自定义函数，然后在任意属性值里调用它。对设计系统来说，这意味着 spacing、颜色透明度、动画 shorthand、响应式尺寸这些规则可以更靠近最终样式。
+
+## 最小写法
+
+\`\`\`css
+@function --space(--step <integer>: 1) returns <length> {
+  result: calc(var(--step) * 4px);
+}
+
+.card {
+  padding: --space(6);
+  gap: --space(3);
+}
+\`\`\`
+
+函数名需要以 \`--\` 开头，参数也按自定义属性的形式声明。函数体里用 \`result\` 返回最终值，调用时像普通 CSS 函数一样写。
+
+这个例子里，设计系统只暴露“步进值”，而不是让每个组件自己写 \`calc(6 * 4px)\`。规则变了，只改函数。
+
+## 参数可以有类型和默认值
+
+\`@function\` 的一个重点是类型约束。你可以告诉浏览器某个参数应该是 \`<color>\`、\`<number>\`、\`<length>\`，也可以指定返回值类型。
+
+\`\`\`css
+@function --surface-alpha(
+  --color <color>,
+  --alpha <number>: 0.88
+) returns <color> {
+  result: oklch(from var(--color) l c h / var(--alpha));
+}
+
+.panel {
+  background: --surface-alpha(#2563eb, 0.12);
+}
+\`\`\`
+
+这类写法比到处复制相对颜色语法更清楚：组件关心的是“我要某个主题色的半透明表面”，具体怎么算留给函数。
+
+## 它和自定义属性不是替代关系
+
+自定义属性更像数据，\`@function\` 更像规则。比较舒服的组合是：token 放在变量里，规则放在函数里。
+
+\`\`\`css
+:root {
+  --space-base: 4px;
+  --radius-base: 8px;
+}
+
+@function --radius(--level <integer>: 1) returns <length> {
+  result: calc(var(--radius-base) + var(--level) * 2px);
+}
+
+.dialog {
+  border-radius: --radius(4);
+}
+\`\`\`
+
+这样组件仍然读得到全局 token，但不会把计算过程散落到每个选择器里。
+
+## 可以承载条件逻辑
+
+函数体里可以写更复杂的逻辑，比如根据媒体条件返回不同结果：
+
+\`\`\`css
+@function --compact-or-roomy(--compact, --roomy) {
+  result: var(--roomy);
+
+  @media (width < 720px) {
+    result: var(--compact);
+  }
+}
+
+.toolbar {
+  padding-inline: --compact-or-roomy(12px, 24px);
+}
+\`\`\`
+
+注意它不是 JavaScript 函数，没有“提前 return”的心智模型。CSS 仍然按层叠和顺序处理，后面的 \`result\` 会覆盖前面的结果。
+
+## 渐进增强怎么写
+
+目前 \`@function\` 还属于需要谨慎试用的新能力。生产里更适合先写稳定回退，再检测支持：
+
+\`\`\`css
+.card {
+  padding: 24px;
+  border-radius: 16px;
+}
+
+@supports at-rule(@function) {
+  @function --space(--step <integer>: 1) returns <length> {
+    result: calc(var(--step) * 4px);
+  }
+
+  .card {
+    padding: --space(6);
+  }
+}
+\`\`\`
+
+如果浏览器不认识 \`@function\`，它仍然会使用前面的普通 CSS。新浏览器则获得更集中、更可维护的计算规则。
+
+## 最后一句
+
+\`@function\` 最吸引我的地方，不是让 CSS 变成另一种编程语言，而是让设计系统里那些重复的“小计算”有了原生落点。变量负责表达值，函数负责表达规则，组件就能少带一点历史包袱。`
+  },
+  {
     id: "2026-07-06-css-corner-shape",
     title: "corner-shape：圆角不只能是圆的",
     date: "2026-07-06",
