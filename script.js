@@ -20,6 +20,105 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-10-dialog-closedby",
+    title: "dialog closedby：弹窗轻关闭终于能写在 HTML 里",
+    date: "2026-07-10",
+    createdAt: Date.parse("2026-07-10T10:00:00+08:00"),
+    tags: ["HTML", "交互", "可访问性"],
+    cover: coverPool[0],
+    excerpt: "closedby 属性让 dialog 可以声明哪些用户动作能关闭弹窗：点遮罩、按 Esc、系统返回手势，或者只能点明确按钮。少写一层监听，也少一点边界状态。",
+    content: `
+## 为什么值得写它
+
+弹窗最麻烦的地方，往往不是“怎么打开”，而是“怎么被关闭”。用户可能点关闭按钮，可能按 \`Esc\`，可能点遮罩，也可能在移动端用系统返回手势。过去这些行为经常被拆散在事件监听、状态变量和组件库配置里。
+
+\`closedby\` 给原生 \`<dialog>\` 补上一个很直接的声明：这个弹窗允许哪些用户动作把它关掉。它不是替代业务确认逻辑，而是把常见关闭策略交还给 HTML。
+
+## 最小写法
+
+\`\`\`html
+<button commandfor="settings" command="show-modal">
+  打开设置
+</button>
+
+<dialog id="settings" closedby="any">
+  <h2>设置</h2>
+  <p>点击遮罩、按 Esc 或点按钮都可以关闭。</p>
+  <button commandfor="settings" command="close">关闭</button>
+</dialog>
+\`\`\`
+
+\`closedby="any"\` 表示三类关闭都允许：轻关闭、平台关闭和开发者指定关闭。轻关闭就是点击或触摸弹窗外部；平台关闭包括桌面端 \`Esc\`、移动端返回或关闭手势；开发者指定关闭则是按钮、表单或脚本调用。
+
+## 三个值怎么选
+
+\`\`\`html
+<dialog closedby="any">...</dialog>
+<dialog closedby="closerequest">...</dialog>
+<dialog closedby="none">...</dialog>
+\`\`\`
+
+- \`any\`：适合轻量设置、预览、帮助说明、非破坏性确认
+- \`closerequest\`：允许 \`Esc\` 或系统返回，但不允许点遮罩关闭
+- \`none\`：只能通过明确按钮、表单或脚本关闭
+
+如果没有写有效的 \`closedby\`，用 \`showModal()\` 打开的模态弹窗默认更接近 \`closerequest\`；非模态弹窗默认更接近 \`none\`。所以想要“点外面关闭”，最好明确写出 \`closedby="any"\`。
+
+## 和 command 属性一起用更干净
+
+之前打开和关闭 \`dialog\` 常常要写一小段 JavaScript：
+
+\`\`\`js
+openButton.addEventListener("click", () => dialog.showModal());
+closeButton.addEventListener("click", () => dialog.close());
+\`\`\`
+
+现在很多简单弹窗可以变成纯声明式：
+
+\`\`\`html
+<button commandfor="confirm-delete" command="show-modal">
+  删除项目
+</button>
+
+<dialog id="confirm-delete" closedby="closerequest">
+  <p>这个操作不可撤销。</p>
+  <button commandfor="confirm-delete" command="close">取消</button>
+  <button data-action="delete">确认删除</button>
+</dialog>
+\`\`\`
+
+这里我会选择 \`closerequest\`，而不是 \`any\`。危险操作不适合让用户误点遮罩就消失，但允许按 \`Esc\` 或系统返回取消，仍然符合很多人的操作预期。
+
+## 表单弹窗也更顺手
+
+\`<form method="dialog">\` 仍然是关闭原生弹窗的好搭档：
+
+\`\`\`html
+<dialog id="profile-editor" closedby="any">
+  <form method="dialog">
+    <label>
+      昵称
+      <input name="name" autofocus>
+    </label>
+    <button value="cancel">取消</button>
+    <button value="save">保存</button>
+  </form>
+</dialog>
+\`\`\`
+
+用户点保存或取消时，表单会关闭弹窗；用户点外面时，也能因为 \`closedby="any"\` 关闭。你仍然可以读取 \`dialog.returnValue\` 判断用户点了哪个按钮。
+
+## 可访问性上要注意什么
+
+\`closedby\` 能减少很多关闭监听，但不代表可以省掉明确的关闭入口。弹窗里最好仍然有一个可聚焦、可读屏识别的关闭按钮，尤其是在移动端、辅助技术环境或复杂表单里。
+
+另外，确认删除、支付、权限变更这类高风险弹窗，不建议使用 \`closedby="any"\`。轻关闭适合“退一步也没损失”的界面；关键决策仍然要给用户一个清楚的按钮。
+
+## 最后一句
+
+\`closedby\` 的价值不大张旗鼓，却很实用：把“这个弹窗应该怎么关”从零散脚本变成 HTML 语义。交互策略写在元素上，浏览器负责处理常见用户动作，组件代码就能少一点状态同步。`
+  },
+  {
     id: "2026-07-08-css-if-function",
     title: "CSS if()：把单个属性的条件判断写回样式表",
     date: "2026-07-08",
