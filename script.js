@@ -20,6 +20,108 @@ const weeklyIdeas = [
 
 const seedPosts = [
   {
+    id: "2026-07-12-regexp-escape",
+    title: "RegExp.escape：把用户输入安全放进正则",
+    date: "2026-07-12",
+    createdAt: Date.parse("2026-07-12T10:00:00+08:00"),
+    tags: ["JavaScript", "安全", "搜索"],
+    cover: coverPool[2],
+    excerpt: "RegExp.escape() 可以把任意字符串转成能安全放进正则表达式的文本片段。搜索、高亮、过滤器和黑名单匹配，都可以少写一段脆弱的手工转义函数。",
+    content: `
+## 为什么值得写它
+
+前端很常见的一件事，是把用户输入拼进正则：搜索关键词、高亮匹配、表格过滤、标签筛选、日志查询。问题在于，用户输入不是“普通文本”那么简单。一个点号 \`.\`、星号 \`*\`、括号 \`()\`，放进正则里都可能改变匹配含义。
+
+过去我们通常自己写一个 escape helper，或者从工具库里拿一段。问题是这段代码看起来简单，边界却不少：连字符、斜杠、换行、Unicode 字符、和前后正则片段拼接时的歧义，都可能踩坑。
+
+\`RegExp.escape()\` 把这件事放进了原生 JavaScript：给它一个字符串，它返回一个可以安全放进正则表达式里的文本片段。
+
+## 最小写法
+
+\`\`\`js
+const keyword = "C++";
+const pattern = new RegExp(RegExp.escape(keyword), "i");
+
+pattern.test("I like C++"); // true
+\`\`\`
+
+这里用户输入的是 \`C++\`。如果直接写进 \`new RegExp(keyword)\`，加号会被当成正则量词，含义就变了。经过 \`RegExp.escape()\` 后，它只表示字面量文本。
+
+再看一个更容易出错的例子：
+
+\`\`\`js
+const input = "(admin)";
+const unsafe = new RegExp(input);
+const safe = new RegExp(RegExp.escape(input));
+
+unsafe.test("admin");   // true
+safe.test("(admin)");   // true
+\`\`\`
+
+未转义的括号会变成分组，所以 \`unsafe\` 匹配的是 \`admin\`。转义后，括号才会被当成真实字符。
+
+## 搜索高亮最适合先用
+
+搜索高亮通常会把关键词拆成正则，再包一层标记。这个场景非常适合 \`RegExp.escape()\`：
+
+\`\`\`js
+function highlight(text, keyword) {
+  if (!keyword.trim()) return text;
+
+  const source = RegExp.escape(keyword.trim());
+  const pattern = new RegExp(source, "gi");
+
+  return text.replace(pattern, "<mark>$&</mark>");
+}
+\`\`\`
+
+这段代码仍然只是演示核心思路。真实页面里如果要把结果塞进 DOM，还要注意 HTML 转义，避免把文本高亮问题变成 XSS 问题。正则转义解决的是“搜索词不要变成正则语法”，不是“HTML 可以随便拼”。
+
+## 它不只是加反斜杠
+
+\`RegExp.escape()\` 比很多手写 helper 更谨慎。它会处理正则语法字符，也会处理一些不能简单用反斜杠逃逸的标点和空白字符。
+
+比如这些输入都应该被当成普通文本：
+
+\`\`\`js
+RegExp.escape("user@example.com");
+RegExp.escape("price: $10.00");
+RegExp.escape("a/b/c");
+RegExp.escape("hello-world");
+\`\`\`
+
+如果团队里有人说“我就 replace 一下特殊字符”，最好停一下。正则语法的边界比想象中多，标准库函数的价值正在于把这些细节收掉。
+
+## 和动态正则拼接
+
+\`RegExp.escape()\` 适合处理用户输入那一段，而不是替代正则本身。你仍然可以把它和自己明确写出的正则结构组合：
+
+\`\`\`js
+function exactWord(keyword) {
+  const escaped = RegExp.escape(keyword);
+  return new RegExp("\\\\b" + escaped + "\\\\b", "i");
+}
+\`\`\`
+
+这里 \`\\\\b\` 是开发者有意写的单词边界，\`escaped\` 是用户输入的安全文本。两者职责分清，代码就更容易审。
+
+## 兼容性策略
+
+\`RegExp.escape()\` 已经进入现代浏览器的基线能力，但如果你的项目还要覆盖旧浏览器或旧运行时，仍然要做一次能力判断。
+
+\`\`\`js
+if (!RegExp.escape) {
+  // 在旧环境里加载 polyfill，或保留经过测试的工具函数。
+}
+\`\`\`
+
+我的建议是：新项目直接用原生能力；老项目先在工具层封装一个 \`escapeRegExp\`，内部优先调用 \`RegExp.escape()\`，再保留旧实现作为回退。这样迁移成本最小。
+
+## 最后一句
+
+\`RegExp.escape()\` 是那种不喧哗但很省心的 API。它不会改变你写搜索功能的架构，却能消掉一类长期存在的小风险：用户只是输入文本，代码却把它当成了正则语法。把这个边界交给标准库，值得。`
+  },
+  {
     id: "2026-07-11-css-scope",
     title: "CSS @scope：把样式影响范围写清楚",
     date: "2026-07-11",
